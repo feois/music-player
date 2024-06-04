@@ -20,6 +20,14 @@ var songs := {}
 func _ready() -> void:
 	Stdin.command.connect(command)
 	opendir("/home/wilson/Music")
+	
+	SelectorManager.connect_group(&"song",
+		func (song, _old):
+			%Title.text = song.title
+			%Artist.text = song.artist
+			%Album.text = song.album
+			%Lyrics.text = song.lyrics
+	)
 
 
 func opendir(path: String) -> void:

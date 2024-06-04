@@ -12,3 +12,8 @@ var album := ""
 var artist := ""
 var lyrics := ""
 var synced := ""
+
+
+func _on_double_click() -> void:
+	print("STOP")
+	print("PLAY " + path)

@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://b81u1c55uki6f"]
+[gd_scene load_steps=3 format=3 uid="uid://b81u1c55uki6f"]
 
 [ext_resource type="Script" path="res://root.gd" id="1_21msl"]
+[ext_resource type="Texture2D" uid="uid://d4misdx7d6u8c" path="res://icon.svg" id="2_8nwv5"]
 
 [node name="Root" type="Control"]
 layout_mode = 3
@@ -28,7 +29,43 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HSplitContainer"]
+[node name="VBoxContainer" type="VSplitContainer" parent="HSplitContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HSplitContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="HSplitContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TextureRect" type="TextureRect" parent="HSplitContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+texture = ExtResource("2_8nwv5")
+expand_mode = 4
+stretch_mode = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HSplitContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 4.0
+
+[node name="Title" type="Label" parent="HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Artist" type="Label" parent="HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Album" type="Label" parent="HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Lyrics" type="Label" parent="HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2

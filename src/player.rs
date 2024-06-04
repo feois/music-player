@@ -1,47 +1,55 @@
 use std::{fs::File, io::BufReader};
 
-use rodio::{Decoder, OutputStream, Sink};
+use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
 
 
 
 pub struct Player {
     #[allow(dead_code)]
     stream: OutputStream,
-    sink: Sink,
+    handle: OutputStreamHandle,
+    sink: Option<Sink>,
 }
 
 impl Player {
     #[inline(always)]
     pub fn new() -> Self {
         let (stream, handle) = OutputStream::try_default().expect("Failed to output audio");
-        let sink = Sink::try_new(&handle).expect("Failed to instantiate sink");
         
         Self {
             stream,
-            sink,
+            handle,
+            sink: None,
         }
     }
     
     #[inline(always)]
-    pub fn play(&self, filepath: &str) {
+    pub fn play(&mut self, filepath: &str) {
         let file = BufReader::new(File::open(filepath).expect("Failed to open file"));
         let source = Decoder::new(file).unwrap();
+        let sink = Sink::try_new(&self.handle).expect("Failed to create sink");
         
-        self.sink.append(source);
+        sink.append(source);
+        
+        self.sink.replace(sink);
     }
     
     #[inline(always)]
-    pub fn stop(&self) {
-        self.sink.stop();
+    pub fn stop(&mut self) {
+        self.sink.take();
     }
     
     #[inline(always)]
     pub fn pause(&self) {
-        self.sink.pause();
+        if let Some(sink) = &self.sink {
+            sink.pause();
+        }
     }
     
     #[inline(always)]
     pub fn resume(&self) {
-        self.sink.play();
+        if let Some(sink) = &self.sink {
+            sink.play();
+        }
     }
 }

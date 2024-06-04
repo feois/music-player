@@ -45,7 +45,7 @@ fn main() {
     let fps = 60.;
     let delta = Duration::from_secs_f64(1. / fps);
     
-    let player = Player::new();
+    let mut player = Player::new();
     let mut gui: Option<GUI> = None;
     
     gui.replace(GUI::launch(String::from("./godot.x86_64"))).map(GUI::kill);
