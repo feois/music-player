@@ -1,1 +1,18 @@
 /target
+godot.x86_64
+
+# Godot 4+ specific ignores
+src/gui/.godot/
+
+# Godot-specific ignores
+src/gui/.import/
+src/gui/export.cfg
+src/gui/export_presets.cfg
+
+# Imported translations (automatically generated from CSV files)
+src/gui/*.translation
+
+# Mono-specific ignores
+src/gui/.mono/
+src/gui/data_*/
+src/gui/mono_crash.*.json

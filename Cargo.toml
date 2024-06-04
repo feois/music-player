@@ -4,4 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-eframe = { version = "0.27.2", features = ["persistence"] }
+rodio = "0.18.1"
+single-instance = "0.3.3"
+spin_sleep = "1.2.0"
+tap = "1.0.1"

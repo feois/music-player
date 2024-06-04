@@ -1,41 +1,62 @@
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+use std::time::{Duration, Instant};
 
-use eframe::egui;
+mod gui;
+mod player;
 
-fn main() -> Result<(), eframe::Error> {
-    eframe::run_native(
-        "Music Player", 
-        eframe::NativeOptions {
-            viewport: egui::ViewportBuilder { maximized: Some(true), ..Default::default() },
-            ..Default::default()
-        }, 
-        Box::new(|cc| {
-            Box::new(App {
-                text: String::new(),
-                num: 0,
-            })
-        })
-    )
-}
+use gui::GUI;
+use player::Player;
 
-struct App {
-    text: String,
-    num: u8,
-}
-
-impl eframe::App for App {
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Heading");
-            ui.horizontal(|ui| {
-                let label = ui.label("Label: ");
-                ui.text_edit_singleline(&mut self.text).labelled_by(label.id);
-            });
-            ui.add(egui::Slider::new(&mut self.num, 0..=100).text("text"));
-            if ui.button("button").clicked() {
-                self.num += 1;
+fn main() {
+    assert!(single_instance::SingleInstance::new("Music player").is_ok_and(|i| i.is_single()));
+    
+    let fps = 60.;
+    let delta = Duration::from_secs_f64(1. / fps);
+    
+    let player = Player::new();
+    let mut gui = None;
+    
+    gui.replace(GUI::launch(String::from("./godot.x86_64"))).map(GUI::kill);
+    
+    loop {
+        let t = Instant::now();
+        
+        let mut exit = false;
+        let mut commands = vec![];
+        
+        // read
+        if let Some(gui) = &mut gui {
+            while let Some(b) = gui.read() {
+                for s in b.split('\n') {
+                    if s == "EXIT" {
+                        exit = true;
+                    }
+                    else {
+                        commands.push(s.to_string());
+                    }
+                }
             }
-            ui.label(format!("text '{}', num {}", self.text, self.num));
-        });
+            
+            if exit {
+                gui.endline();
+                gui.flush();
+            }
+        }
+        
+        // process commands
+        if !commands.is_empty() {
+            println!("{:?}", commands);
+        }
+        
+        // kill when finished
+        if exit || gui.as_mut().is_some_and(GUI::finished) {
+            gui.take().map(GUI::kill);
+        }
+        
+        // sleep till next frame
+        let t = Instant::now().duration_since(t);
+        
+        if t < delta {
+            spin_sleep::sleep(delta - t);
+        }
     }
 }
