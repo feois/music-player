@@ -1,14 +1,14 @@
 use std::{io::{Read, Write}, process::{Child, ChildStdin, Command, Stdio}, sync::mpsc::{channel, Receiver}, thread};
 
 
-pub struct GUI {
+pub struct GUI<const BUFFER_SIZE: usize = 1024> {
     process: Child,
     stdin: ChildStdin,
     receiver: Receiver<String>,
 }
 
 
-impl GUI {
+impl<const BUFFER_SIZE: usize> GUI<BUFFER_SIZE> {
     #[inline(always)]
     pub fn launch(path: String) -> Self {
         let mut process = Command::new(path)
@@ -22,7 +22,7 @@ impl GUI {
         let (sender, receiver) = channel();
         
         thread::spawn(move || {
-            let mut buffer = [0; 1024];
+            let mut buffer = [0; BUFFER_SIZE];
             
             loop {
                 let n = stdout.read(&mut buffer).expect("Failed to read stdout");

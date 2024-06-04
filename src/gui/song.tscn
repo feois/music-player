@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://dioabd7kak1bw"]
+
+[ext_resource type="Script" path="res://song.gd" id="1_tulxl"]
+
+[node name="Song" type="Button"]
+offset_right = 22.0
+offset_bottom = 26.0
+script = ExtResource("1_tulxl")
+group = &"song"

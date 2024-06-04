@@ -14,11 +14,17 @@ config/name="Music Player GUI"
 run/main_scene="res://root.tscn"
 config/features=PackedStringArray("4.2", "GL Compatibility")
 run/flush_stdout_on_print=true
+boot_splash/show_image=false
 config/icon="res://icon.svg"
 
 [autoload]
 
 Stdin="*res://stdin.gd"
+SelectorManager="*res://selector_manager.gd"
+
+[display]
+
+window/size/mode=2
 
 [rendering]
 

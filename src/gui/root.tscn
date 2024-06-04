@@ -1,4 +1,6 @@
-[gd_scene format=3 uid="uid://b81u1c55uki6f"]
+[gd_scene load_steps=2 format=3 uid="uid://b81u1c55uki6f"]
+
+[ext_resource type="Script" path="res://root.gd" id="1_21msl"]
 
 [node name="Root" type="Control"]
 layout_mode = 3
@@ -7,6 +9,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_21msl")
 
 [node name="HSplitContainer" type="HSplitContainer" parent="."]
 layout_mode = 1
@@ -16,7 +19,12 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Tree" type="Tree" parent="HSplitContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="HSplitContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Library" type="VBoxContainer" parent="HSplitContainer/ScrollContainer"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 

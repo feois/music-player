@@ -7,10 +7,13 @@ var thread: Thread
 func _ready() -> void:
 	thread = Thread.new()
 	
+	#return
+	
 	thread.start(
 		func ():
 			while true:
-				call_thread_safe(&"emit_signal", &"command", OS.read_string_from_stdin())
+				var s := OS.read_string_from_stdin()
+				call_thread_safe(&"emit_signal", &"command", s)
 	)
 
 
