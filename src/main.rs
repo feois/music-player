@@ -2,10 +2,12 @@ use std::time::{Duration, Instant};
 
 mod gui;
 mod player;
+mod events;
 
-use gui::GUI;
+use gui::*;
+use player::*;
+use events::*;
 use id3::{Tag, TagLike};
-use player::Player;
 
 const DELIMETER: &str = "::::";
 
@@ -44,13 +46,19 @@ fn main() {
     
     let fps = 60.;
     let delta = Duration::from_secs_f64(1. / fps);
+    let path = "./godot.x86_64";
     
     let mut player = Player::new();
     let mut gui: Option<GUI> = None;
+    let mut listener = EventListener::listen();
     
-    gui.replace(GUI::launch(String::from("./godot.x86_64"))).map(GUI::kill);
+    let toggle_gui = listener.register_combination(&[Key::Alt, Key::KeyC]);
+    let quit_app = listener.register_combination(&[Key::Alt, Key::KeyE]);
+    let pause_song = listener.register_combination(&[Key::Alt, Key::Space]);
     
-    loop {
+    gui.replace(GUI::launch(path)).map(GUI::kill);
+    
+    'event_loop: loop {
         let t = Instant::now();
         
         let mut exit = false;
@@ -88,6 +96,34 @@ fn main() {
         if exit || gui.as_mut().is_some_and(GUI::finished) {
             println!("TASK: Closing GUI");
             gui.take().map(GUI::kill);
+        }
+        
+        listener.poll_and_register_events();
+        
+        for comb in listener.consume_all() {
+            if comb == toggle_gui {
+                if gui.is_none() {
+                    gui.replace(GUI::launch(path));
+                }
+                else {
+                    gui.take().map(GUI::kill);
+                }
+            }
+            
+            if comb == quit_app {
+                gui.take().map(GUI::kill);
+                
+                break 'event_loop;
+            }
+            
+            if comb == pause_song {
+                if player.is_paused() {
+                    player.resume();
+                }
+                else {
+                    player.pause();
+                }
+            }
         }
         
         // sleep till next frame

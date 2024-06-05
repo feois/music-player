@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 id3 = "1.13.1"
+rdev = "0.5.3"
 rodio = "0.18.1"
 single-instance = "0.3.3"
 spin_sleep = "1.2.0"

@@ -57,15 +57,22 @@ size_flags_stretch_ratio = 4.0
 [node name="Title" type="Label" parent="HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
+max_lines_visible = 1
 
 [node name="Artist" type="Label" parent="HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
+max_lines_visible = 1
 
 [node name="Album" type="Label" parent="HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
+max_lines_visible = 1
 
-[node name="Lyrics" type="Label" parent="HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Lyrics" type="Label" parent="HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer/ScrollContainer"]
 unique_name_in_owner = true
 layout_mode = 2

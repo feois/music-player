@@ -52,4 +52,9 @@ impl Player {
             sink.play();
         }
     }
+    
+    #[inline(always)]
+    pub fn is_paused(&self) -> bool {
+        self.sink.as_ref().is_some_and(|s| s.is_paused())
+    }
 }

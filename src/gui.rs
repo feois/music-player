@@ -10,7 +10,7 @@ pub struct GUI<const BUFFER_SIZE: usize = 1024> {
 
 impl<const BUFFER_SIZE: usize> GUI<BUFFER_SIZE> {
     #[inline(always)]
-    pub fn launch(path: String) -> Self {
+    pub fn launch(path: &str) -> Self {
         let mut process = Command::new(path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
