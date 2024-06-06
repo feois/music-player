@@ -57,13 +57,18 @@ fn set_volume(gui: &mut Option<GUI>, player: &Player, mut target: f32, volume: &
 }
 
 #[inline(always)]
-fn launch_gui() -> GUI {
+fn launch_gui(gui: &mut Option<GUI>) {
     let mut dir = current_exe().expect("Failed to get current directory");
     
     dir.pop();
     dir.push("godot");
     
-    GUI::launch(dir.as_os_str().to_str().unwrap())
+    gui.replace(GUI::launch(dir.as_os_str().to_str().unwrap())).map(GUI::kill);
+}
+
+#[inline(always)]
+fn kill_gui(gui: &mut Option<GUI>) {
+    gui.take().map(GUI::kill);
 }
 
 fn main() {
@@ -85,7 +90,7 @@ fn main() {
     let volume_increase = listener.register_combination(&[Key::Alt, Key::ShiftLeft, Key::UpArrow], key_duration);
     let volume_decrease = listener.register_combination(&[Key::Alt, Key::ShiftLeft, Key::DownArrow], key_duration);
     
-    gui.replace(launch_gui()).map(GUI::kill);
+    launch_gui(&mut gui);
     
     'event_loop: loop {
         let t = Instant::now();
@@ -126,23 +131,24 @@ fn main() {
         // kill when finished
         if exit || gui.as_mut().is_some_and(GUI::finished) {
             println!("TASK: Closing GUI");
-            gui.take().map(GUI::kill);
+            kill_gui(&mut gui);
         }
         
+        // key events
         listener.poll_and_register_events();
         
         for comb in listener.consume_all() {
             if comb == toggle_gui {
                 if gui.is_none() {
-                    gui.replace(launch_gui());
+                    launch_gui(&mut gui);
                 }
                 else {
-                    gui.take().map(GUI::kill);
+                    kill_gui(&mut gui);
                 }
             }
             
             if comb == quit_app {
-                gui.take().map(GUI::kill);
+                kill_gui(&mut gui);
                 
                 break 'event_loop;
             }

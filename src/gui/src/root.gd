@@ -39,7 +39,7 @@ func opendir(path: String) -> void:
 		
 		for file in files:
 			if file.ends_with(".mp3"):
-				var song: Song = preload("res://song.tscn").instantiate()
+				var song: Song = preload("res://src/song.tscn").instantiate()
 				
 				song.path = path.path_join(file)
 				song.text = file

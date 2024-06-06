@@ -4,7 +4,7 @@ use std::{env, path::Path, process::Command};
 // godot --headless --path path_to_your_project --export-release my_export_preset_name game.exe
 
 fn main() {
-    println!("cargo::rerun-if-changed=src/gui");
+    println!("cargo::rerun-if-changed=src/gui/src");
     
     let dir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let profile = env::var("PROFILE").unwrap();

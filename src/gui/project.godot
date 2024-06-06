@@ -11,16 +11,16 @@ config_version=5
 [application]
 
 config/name="Music Player GUI"
-run/main_scene="res://root.tscn"
+run/main_scene="res://src/root.tscn"
 config/features=PackedStringArray("4.2", "GL Compatibility")
 run/flush_stdout_on_print=true
 boot_splash/show_image=false
-config/icon="res://icon.svg"
+config/icon="res://src/icon.svg"
 
 [autoload]
 
-Stdin="*res://stdin.gd"
-SelectorManager="*res://selector_manager.gd"
+Stdin="*res://src/stdin.gd"
+SelectorManager="*res://src/selector_manager.gd"
 
 [display]
 

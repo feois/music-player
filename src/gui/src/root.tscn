@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://b81u1c55uki6f"]
 
-[ext_resource type="Script" path="res://root.gd" id="1_21msl"]
-[ext_resource type="Texture2D" uid="uid://d4misdx7d6u8c" path="res://icon.svg" id="2_8nwv5"]
+[ext_resource type="Script" path="res://src/root.gd" id="1_21msl"]
+[ext_resource type="Texture2D" uid="uid://d4misdx7d6u8c" path="res://src/icon.svg" id="2_8nwv5"]
 
 [node name="Root" type="Control"]
 layout_mode = 3
