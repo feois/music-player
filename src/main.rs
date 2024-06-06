@@ -11,6 +11,7 @@ use id3::{Tag, TagLike};
 
 const DELIMETER: &str = "::::";
 
+#[inline(always)]
 fn write_tags(gui: &mut GUI, tag: &str, content: &str) {
     gui.write(tag);
     gui.write(DELIMETER);
@@ -18,6 +19,7 @@ fn write_tags(gui: &mut GUI, tag: &str, content: &str) {
     gui.write(DELIMETER);
 }
 
+#[inline(always)]
 fn read_tags(gui: &mut GUI, path: &str) {
     match Tag::read_from_path(path) {
         Ok(tag) => {
@@ -42,6 +44,19 @@ fn read_tags(gui: &mut GUI, path: &str) {
 }
 
 #[inline(always)]
+fn set_volume(gui: &mut Option<GUI>, player: &Player, mut target: f32, volume: &mut f32) {
+    target = target.clamp(0., 1.);
+    
+    *volume = target;
+    
+    player.volume(target);
+    
+    if let Some(gui) = gui {
+        gui.write_line(&("VOLUME".to_string() + DELIMETER + &(target as i32).to_string()));
+    }
+}
+
+#[inline(always)]
 fn launch_gui() -> GUI {
     let mut dir = current_exe().expect("Failed to get current directory");
     
@@ -55,7 +70,7 @@ fn main() {
     let fps = 60.;
     let delta = Duration::from_secs_f64(1. / fps);
     let volume_step = 0.05;
-    let key_duration = Duration::from_millis(1000);
+    let key_duration = Duration::from_millis(500);
     
     let mut player = Player::new();
     let mut gui: Option<GUI> = None;
@@ -146,13 +161,11 @@ fn main() {
             }
             
             if comb == volume_increase {
-                volume = (volume + volume_step).clamp(0., 1.);
-                player.volume(volume);
+                set_volume(&mut gui, &player, volume + volume_step, &mut volume);
             }
             
             if comb == volume_decrease {
-                volume = (volume - volume_step).clamp(0., 1.);
-                player.volume(volume);
+                set_volume(&mut gui, &player, volume - volume_step, &mut volume);
             }
         }
         
