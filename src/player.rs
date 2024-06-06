@@ -3,7 +3,6 @@ use std::{fs::File, io::BufReader};
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
 
 
-
 pub struct Player {
     #[allow(dead_code)]
     stream: OutputStream,
@@ -56,5 +55,12 @@ impl Player {
     #[inline(always)]
     pub fn is_paused(&self) -> bool {
         self.sink.as_ref().is_some_and(|s| s.is_paused())
+    }
+    
+    #[inline(always)]
+    pub fn volume(&self, amp: f32) {
+        if let Some(sink) = &self.sink {
+            sink.set_volume(amp);
+        }
     }
 }

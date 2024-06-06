@@ -1,5 +1,4 @@
 /target
-godot.x86_64
 
 # Godot 4+ specific ignores
 src/gui/.godot/

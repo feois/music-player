@@ -1,4 +1,4 @@
-use std::time::{Duration, Instant};
+use std::{env::current_exe, time::{Duration, Instant}};
 
 mod gui;
 mod player;
@@ -41,22 +41,36 @@ fn read_tags(gui: &mut GUI, path: &str) {
     }
 }
 
-fn main() {
-    assert!(single_instance::SingleInstance::new("Music player").is_ok_and(|i| i.is_single()));
+#[inline(always)]
+fn launch_gui() -> GUI {
+    let mut dir = current_exe().expect("Failed to get current directory");
     
+    dir.pop();
+    dir.push("godot");
+    
+    GUI::launch(dir.as_os_str().to_str().unwrap())
+}
+
+fn main() {
     let fps = 60.;
     let delta = Duration::from_secs_f64(1. / fps);
-    let path = "./godot.x86_64";
+    let volume_step = 0.05;
+    let key_duration = Duration::from_millis(1000);
     
     let mut player = Player::new();
     let mut gui: Option<GUI> = None;
     let mut listener = EventListener::listen();
+    let mut volume = 1f32;
     
-    let toggle_gui = listener.register_combination(&[Key::Alt, Key::KeyC]);
-    let quit_app = listener.register_combination(&[Key::Alt, Key::KeyE]);
-    let pause_song = listener.register_combination(&[Key::Alt, Key::Space]);
+    let toggle_gui = listener.register_once_combination(&[Key::Alt, Key::KeyC]);
+    let quit_app = listener.register_once_combination(&[Key::Alt, Key::KeyE]);
+    let pause_resume_song = listener.register_once_combination(&[Key::Alt, Key::Space]);
+    let stop_player = listener.register_once_combination(&[Key::Alt, Key::ShiftLeft, Key::KeyM]);
     
-    gui.replace(GUI::launch(path)).map(GUI::kill);
+    let volume_increase = listener.register_combination(&[Key::Alt, Key::ShiftLeft, Key::UpArrow], key_duration);
+    let volume_decrease = listener.register_combination(&[Key::Alt, Key::ShiftLeft, Key::DownArrow], key_duration);
+    
+    gui.replace(launch_gui()).map(GUI::kill);
     
     'event_loop: loop {
         let t = Instant::now();
@@ -66,22 +80,24 @@ fn main() {
         // read
         if let Some(gui) = &mut gui {
             while let Some(s) = gui.read() {
-                for command in s.split('\n') {
-                    if command == "EXIT" {
-                        exit = true;
-                    }
-                    else {
-                        let Some(split) = command.bytes().position(|b| b == b' ') else { continue; };
-                        let args = &command[split + 1..];
-                        
-                        match &command[..split] {
-                            "READTAG" => read_tags(gui, args),
-                            "PLAY" => player.play(args),
-                            "STOP" => player.stop(),
-                            "PAUSE" => player.pause(),
-                            "RESUME" => player.resume(),
-                            name => println!("ERROR: Unknown command {}", name),
+                for command in s.split('\n').filter(|s| !s.is_empty()) {
+                    let split = command.bytes().position(|b| b == b' ').unwrap_or(command.len());
+                    let args = if split == command.len() { "" } else { &command[split + 1..] };
+                    
+                    match &command[..split] {
+                        "READTAG" => read_tags(gui, args),
+                        "PLAY" => player.play(args),
+                        "STOP" => player.stop(),
+                        "PAUSE" => player.pause(),
+                        "RESUME" => player.resume(),
+                        "VOLUME" => {
+                            let Ok(v) = args.parse() else { continue; };
+                            
+                            volume = v;
+                            player.volume(volume);
                         }
+                        "EXIT" => exit = true,
+                        _ => println!("GODOT: {}", command),
                     }
                 }
             }
@@ -103,7 +119,7 @@ fn main() {
         for comb in listener.consume_all() {
             if comb == toggle_gui {
                 if gui.is_none() {
-                    gui.replace(GUI::launch(path));
+                    gui.replace(launch_gui());
                 }
                 else {
                     gui.take().map(GUI::kill);
@@ -116,13 +132,27 @@ fn main() {
                 break 'event_loop;
             }
             
-            if comb == pause_song {
+            if comb == pause_resume_song {
                 if player.is_paused() {
                     player.resume();
                 }
                 else {
                     player.pause();
                 }
+            }
+            
+            if comb == stop_player {
+                player.stop();
+            }
+            
+            if comb == volume_increase {
+                volume = (volume + volume_step).clamp(0., 1.);
+                player.volume(volume);
+            }
+            
+            if comb == volume_decrease {
+                volume = (volume - volume_step).clamp(0., 1.);
+                player.volume(volume);
             }
         }
         

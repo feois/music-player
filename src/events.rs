@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, collections::HashSet, hash::Hash, sync::mpsc::{channel, Receiver}, thread};
+use std::{borrow::Borrow, collections::HashSet, hash::Hash, sync::mpsc::{channel, Receiver}, thread, time::{Duration, Instant}};
 
 pub use rdev::Key;
 pub use std::time::SystemTime as Time;
@@ -44,8 +44,7 @@ pub enum Event {
 pub struct EventListener {
     receiver: Receiver<rdev::Event>,
     keys: KeyCombination,
-    combinations: Vec<KeyCombination>,
-    consumed: HashSet<usize>,
+    combinations: Vec<(KeyCombination, Duration, Option<Instant>)>,
 }
 
 impl Event {
@@ -118,7 +117,6 @@ impl EventListener {
             receiver: r,
             keys: KeyCombination::new(),
             combinations: Vec::new(),
-            consumed: HashSet::new(),
         }
     }
     
@@ -147,16 +145,18 @@ impl EventListener {
         }
     }
     
-    pub fn register_combination<T: Borrow<Key>>(&mut self, keys: impl IntoIterator<Item = T>) -> usize {
+    #[inline(always)]
+    pub fn register_combination<T: Borrow<Key>>(&mut self, keys: impl IntoIterator<Item = T>, duration: Duration) -> usize {
         let id = self.combinations.len();
         
-        self.combinations.push(keys.into_iter().map(|t| *t.borrow()).collect());
+        self.combinations.push((keys.into_iter().map(|t| *t.borrow()).collect(), duration, None));
         
         id
     }
     
-    pub fn get_combination(&self, id: usize) -> &KeyCombination {
-        &self.combinations[id]
+    #[inline(always)]
+    pub fn register_once_combination<T: Borrow<Key>>(&mut self, keys: impl IntoIterator<Item = T>) -> usize {
+        self.register_combination(keys, Duration::MAX)
     }
     
     #[inline(always)]
@@ -166,20 +166,28 @@ impl EventListener {
     
     #[inline(always)]
     pub fn consume_if_pressed(&mut self, combination: usize) -> bool {
-        let comb = self.get_combination(combination);
+        let now = Instant::now();
+        let (comb, duration, t) = &mut self.combinations[combination];
+        let overtime = t.map(|t| now - t >= *duration);
         
         if self.keys.includes(comb) {
-            if self.consumed.contains(&combination) {
-                false
+            if let Some(overtime) = overtime {
+                if overtime {
+                    t.replace(now);
+                    true
+                }
+                else {
+                    false
+                }
             }
             else {
-                self.consumed.insert(combination);
+                t.replace(now);
                 
                 true
             }
         }
         else {
-            self.consumed.remove(&combination);
+            t.take();
             
             false
         }
