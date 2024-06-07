@@ -3,6 +3,8 @@ use std::{borrow::Borrow, collections::HashSet, hash::Hash, sync::mpsc::{channel
 pub use rdev::Key;
 pub use std::time::SystemTime as Time;
 
+use crate::BooleanConditional;
+
 
 pub struct KeyCombination(HashSet<Key>);
 
@@ -111,7 +113,7 @@ impl EventListener {
     pub fn listen() -> Self {
         let (s, r) = channel();
         
-        thread::spawn(move || rdev::listen(move |e| { s.send(e); }).expect("Failed to listen"));
+        thread::spawn(move || rdev::listen(move |e| { s.send(e).expect("Listener dropped"); }).expect("Failed to listen"));
         
         Self {
             receiver: r,
@@ -121,26 +123,11 @@ impl EventListener {
     }
     
     #[inline(always)]
-    pub fn poll_events(&self) -> impl Iterator<Item = Event> + '_ {
-        self.receiver.try_iter().filter_map(|e| e.try_into().ok())
-    }
-    
-    #[inline(always)]
-    pub fn register_events(&mut self, event: Event) {
-        match event {
-            Event::Pressed(k, _) => { self.keys.add(k); }
-            Event::Released(k, _) => { self.keys.remove(k); }
-        }
-    }
-    
-    #[inline(always)]
-    pub fn poll_and_register_events(&mut self) {
-        let Self { receiver, keys, .. } = self;
-        
-        for e in receiver.try_iter().filter_map(|e| e.try_into().ok()) {
+    pub fn poll_events(&mut self) {
+        for e in self.receiver.try_iter().filter_map(|e| e.try_into().ok()) {
             match e {
-                Event::Pressed(k, _) => { keys.add(k); }
-                Event::Released(k, _) => { keys.remove(k); }
+                Event::Pressed(k, _) => { self.keys.add(k); }
+                Event::Released(k, _) => { self.keys.remove(k); }
             }
         }
     }
@@ -168,29 +155,9 @@ impl EventListener {
     pub fn consume_if_pressed(&mut self, combination: usize) -> bool {
         let now = Instant::now();
         let (comb, duration, t) = &mut self.combinations[combination];
-        let overtime = t.map(|t| now - t >= *duration);
+        let overtime = !t.is_some_and(|t| now - t < *duration);
         
-        if self.keys.includes(comb) {
-            if let Some(overtime) = overtime {
-                if overtime {
-                    t.replace(now);
-                    true
-                }
-                else {
-                    false
-                }
-            }
-            else {
-                t.replace(now);
-                
-                true
-            }
-        }
-        else {
-            t.take();
-            
-            false
-        }
+        self.keys.includes(comb).elsedo(|| { t.take(); }) && overtime.ifdo(|| { t.replace(now); })
     }
     
     #[inline(always)]

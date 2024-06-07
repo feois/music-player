@@ -11,6 +11,29 @@ use id3::{Tag, TagLike};
 
 const DELIMETER: &str = "::::";
 
+pub trait BooleanConditional {
+    fn ifdo(self, f: impl FnOnce()) -> Self;
+    fn elsedo(self, f: impl FnOnce()) -> Self;
+}
+
+impl BooleanConditional for bool {
+    fn ifdo(self, f: impl FnOnce()) -> Self {
+        if self {
+            f();
+        }
+        
+        self
+    }
+    
+    fn elsedo(self, f: impl FnOnce()) -> Self {
+        if !self {
+            f();
+        }
+        
+        self
+    }
+}
+
 #[inline(always)]
 fn write_tags(gui: &mut GUI, tag: &str, content: &str) {
     gui.write(tag);
@@ -24,7 +47,6 @@ fn read_tags(gui: &mut GUI, path: &str) {
     match Tag::read_from_path(path) {
         Ok(tag) => {
             let lyrics = tag.lyrics().find(|lyrics| lyrics.lang == "eng").map_or("None", |lyrics| &lyrics.text);
-            let synced = tag.synchronised_lyrics().find(|lyrics| lyrics.lang == "eng");
             
             println!("TASK: Reading tag of {}", path);
             
@@ -33,7 +55,6 @@ fn read_tags(gui: &mut GUI, path: &str) {
             write_tags(gui, "Album", tag.album().unwrap_or("No Album"));
             write_tags(gui, "Artist", &tag.artists().unwrap_or(vec![]).join(", "));
             write_tags(gui, "Lyrics", lyrics);
-            // write_tags(gui, "Synced", );
             gui.endline();
             gui.flush();
         }
@@ -135,7 +156,7 @@ fn main() {
         }
         
         // key events
-        listener.poll_and_register_events();
+        listener.poll_events();
         
         for comb in listener.consume_all() {
             if comb == toggle_gui {
