@@ -1,27 +1,24 @@
-use std::{env, path::Path, process::Command};
+use std::{env, path::PathBuf, process::Command, str::FromStr};
 
-
-// godot --headless --path path_to_your_project --export-release my_export_preset_name game.exe
 
 fn main() {
     println!("cargo::rerun-if-changed=src/gui/src");
+    println!("cargo::rerun-if-changed=src/gui/project.godot");
     
-    let dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let profile = env::var("PROFILE").unwrap();
-    let path = Path::new(&dir).join("target").join(profile).join("godot");
+    let mut path = PathBuf::from_str(&env::var("OUT_DIR").unwrap()).unwrap();
+    
+    path.pop();
+    path.pop();
+    path.pop();
+    path.push("godot");
     
     let target = env::var("TARGET").unwrap();
     let os = target.split('-').nth(2).unwrap();
-    let preset = match os {
-        "linux" => "Linux/X11",
-        "windows" => todo!(),
-        _ => unimplemented!(),
-    };
     
-    Command::new("godot")
+    Command::new(env::var("GODOT_PATH").ok().as_ref().map_or("godot", |s| s.as_str()))
         .arg("--headless")
         .args(&["--path", "src/gui"])
-        .args(&["--export-release", preset, path.as_os_str().to_str().unwrap()])
+        .args(&["--export-release", os, path.as_os_str().to_str().unwrap()])
         .spawn()
         .expect("Cannot export godot")
         .wait()

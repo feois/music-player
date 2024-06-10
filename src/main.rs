@@ -1,4 +1,6 @@
-use std::{env::current_exe, time::{Duration, Instant}};
+// #![windows_subsystem = "windows"]
+
+use std::{env::current_exe, path::Path, time::{Duration, Instant}};
 
 mod gui;
 mod player;
@@ -8,6 +10,9 @@ use gui::*;
 use player::*;
 use events::*;
 use id3::{Tag, TagLike};
+
+#[cfg(target_os = "linux")]
+use xosd_rs::Xosd;
 
 const DELIMETER: &str = "::::";
 
@@ -56,11 +61,8 @@ fn read_tags(gui: &mut GUI, path: &str) {
             write_tags(gui, "Artist", &tag.artists().unwrap_or(vec![]).join(", "));
             write_tags(gui, "Lyrics", lyrics);
             gui.endline();
-            gui.flush();
         }
-        Err(e) => {
-            println!("ERROR: Cannot read tag from {} {}", path, e);
-        }
+        Err(e) => println!("ERROR: Cannot read tag from {} ({})", path, e)
     }
 }
 
@@ -73,7 +75,7 @@ fn set_volume(gui: &mut Option<GUI>, player: &Player, mut target: f32, volume: &
     player.volume(target);
     
     if let Some(gui) = gui {
-        gui.write_line(&("VOLUME".to_string() + DELIMETER + &(target as i32).to_string()));
+        gui.write_line(&("VOLUME".to_string() + DELIMETER + &((target * 100.).round() as i32).to_string()));
     }
 }
 
@@ -96,7 +98,7 @@ fn main() {
     let fps = 60.;
     let delta = Duration::from_secs_f64(1. / fps);
     let volume_step = 0.05;
-    let key_duration = Duration::from_millis(500);
+    let key_duration = Duration::from_millis(100);
     
     let mut player = Player::new();
     let mut gui: Option<GUI> = None;
@@ -108,49 +110,58 @@ fn main() {
     let pause_resume_song = listener.register_once_combination(&[Key::Alt, Key::Space]);
     let stop_player = listener.register_once_combination(&[Key::Alt, Key::ShiftLeft, Key::KeyM]);
     
-    let volume_increase = listener.register_combination(&[Key::Alt, Key::ShiftLeft, Key::UpArrow], key_duration);
-    let volume_decrease = listener.register_combination(&[Key::Alt, Key::ShiftLeft, Key::DownArrow], key_duration);
+    let volume_increase = listener.register_combination(&[Key::Alt, Key::UpArrow], key_duration);
+    let volume_decrease = listener.register_combination(&[Key::Alt, Key::DownArrow], key_duration);
     
     launch_gui(&mut gui);
+    
+    let flags = 524456; //0x00080000 | 0x00000080 | 0x00000008 | 0x00000020;
+    
+    // let mut xosd = Xosd::new(1).unwrap();
+    
+    // xosd.set_color("white").unwrap();
+    // xosd.set_timeout(5).unwrap();
+    // xosd.set_horizontal_align(xosd_rs::HorizontalAlign::Center).unwrap();
+    // xosd.set_vertical_align(xosd_rs::VerticalAlign::Top).unwrap();
+    // xosd.display(0, Command::String(flags.to_string())).unwrap();
     
     'event_loop: loop {
         let t = Instant::now();
         
-        let mut exit = false;
+        let mut close_gui = false;
         
         // read
         if let Some(gui) = &mut gui {
-            while let Some(s) = gui.read() {
-                for command in s.split('\n').filter(|s| !s.is_empty()) {
-                    let split = command.bytes().position(|b| b == b' ').unwrap_or(command.len());
-                    let args = if split == command.len() { "" } else { &command[split + 1..] };
-                    
-                    match &command[..split] {
-                        "READTAG" => read_tags(gui, args),
-                        "PLAY" => player.play(args),
-                        "STOP" => player.stop(),
-                        "PAUSE" => player.pause(),
-                        "RESUME" => player.resume(),
-                        "VOLUME" => {
-                            let Ok(v) = args.parse() else { continue; };
-                            
-                            volume = v;
-                            player.volume(volume);
-                        }
-                        "EXIT" => exit = true,
-                        _ => println!("GODOT: {}", command),
-                    }
+            while let Some(command) = gui.read() {
+                let split = command.bytes().position(|b| b == b' ').unwrap_or(command.len());
+                let args = if split == command.len() { "" } else { &command[split + 1..] };
+                
+                match &command[..split] {
+                    "READTAG" => read_tags(gui, args),
+                    "PLAY" => player.play(args),
+                    "STOP" => player.stop(),
+                    "PAUSE" => player.pause(),
+                    "RESUME" => player.resume(),
+                    "VOLUME" => {
+                        let Ok(v) = args.parse() else { continue; };
+                        
+                        volume = v;
+                        player.volume(volume);
+                    },
+                    "INFO" => println!("GODOT-PRINT: {}", args),
+                    "EXIT" => close_gui = true,
+                    _ => println!("GODOT: {}", command),
                 }
             }
             
-            if exit {
+            if close_gui {
                 gui.endline();
-                gui.flush();
             }
         }
         
+        
         // kill when finished
-        if exit || gui.as_mut().is_some_and(GUI::finished) {
+        if close_gui || gui.as_mut().is_some_and(GUI::finished) {
             println!("TASK: Closing GUI");
             kill_gui(&mut gui);
         }
@@ -170,7 +181,6 @@ fn main() {
             
             if comb == quit_app {
                 kill_gui(&mut gui);
-                
                 break 'event_loop;
             }
             

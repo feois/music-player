@@ -1,12 +1,18 @@
-use std::{io::{Read, Write}, process::{Child, ChildStdin, Command, Stdio}, sync::mpsc::{channel, Receiver}, thread};
+use std::{io::{BufRead, BufReader, Write}, process::{Child, ChildStdin, Command, Stdio}, sync::mpsc::{channel, Receiver}, thread};
 
 
 pub struct GUI<const BUFFER_SIZE: usize = 1024> {
     process: Child,
     stdin: ChildStdin,
     receiver: Receiver<String>,
+    buffer: String,
 }
 
+#[cfg(target_os = "windows")]
+const NEWLINE: usize = 2;
+
+#[cfg(not(target_os = "windows"))]
+const NEWLINE: usize = 1;
 
 impl<const BUFFER_SIZE: usize> GUI<BUFFER_SIZE> {
     #[inline(always)]
@@ -17,23 +23,32 @@ impl<const BUFFER_SIZE: usize> GUI<BUFFER_SIZE> {
             .spawn()
             .expect("Cannot launch GUI");
         let stdin = process.stdin.take().unwrap();
-        let mut stdout = process.stdout.take().unwrap();
+        let stdout = process.stdout.take().unwrap();
+        
+        println!("TASK: Opening GUI");
         
         let (sender, receiver) = channel();
         
         thread::spawn(move || {
-            let mut buffer = [0; BUFFER_SIZE];
+            let mut bufreader = BufReader::new(stdout);
+            let mut buffer = Vec::new();
             
             loop {
-                let n = stdout.read(&mut buffer).expect("Failed to read stdout");
-                
-                if n == 0 || sender.send(String::from_utf8(buffer[..n].to_vec()).expect("Invalid string")).is_err() {
-                    break;
+                match bufreader.read_until(b'\n', &mut buffer) {
+                    Ok(0) => break,
+                    Ok(n) => {
+                        if n >= NEWLINE && sender.send(String::from_utf8(buffer[..n - NEWLINE].to_vec()).expect("Invalid string")).is_err() {
+                            break;
+                        }
+                    }
+                    Err(e) => { println!("ERROR: GUI output {}", e); break }
                 }
+                
+                buffer.clear();
             }
         });
         
-        Self { process, stdin, receiver }
+        Self { process, stdin, receiver, buffer: String::new() }
     }
     
     #[inline(always)]
@@ -43,27 +58,26 @@ impl<const BUFFER_SIZE: usize> GUI<BUFFER_SIZE> {
     
     #[inline(always)]
     pub fn write(&mut self, string: &str) {
-        if !self.finished() {
-            self.stdin.write_all(string.as_bytes()).expect("Failed to write stdin");
-        }
+        self.buffer += string;
     }
     
     #[inline(always)]
     pub fn endline(&mut self) {
-        self.write("\n");
+        let mut s = self.buffer.replace("\n", "\\n");
+        
+        s += "\n";
+        
+        if !self.finished() {
+            self.stdin.write_all(s.as_bytes()).expect("Failed to write stdin");
+        }
+        
+        self.buffer.clear();
     }
     
     #[inline(always)]
     pub fn write_line(&mut self, string: &str) {
         self.write(string);
         self.endline();
-    }
-    
-    #[inline(always)]
-    pub fn flush(&mut self) {
-        if !self.finished() {
-            self.stdin.flush().expect("Failed to flush");
-        }
     }
     
     #[inline(always)]

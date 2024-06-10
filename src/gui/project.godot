@@ -12,7 +12,7 @@ config_version=5
 
 config/name="Music Player GUI"
 run/main_scene="res://src/root.tscn"
-config/features=PackedStringArray("4.2", "GL Compatibility")
+config/features=PackedStringArray("4.3", "GL Compatibility")
 run/flush_stdout_on_print=true
 boot_splash/show_image=false
 config/icon="res://src/icon.svg"
@@ -25,6 +25,23 @@ SelectorManager="*res://src/selector_manager.gd"
 [display]
 
 window/size/mode=2
+
+[filesystem]
+
+import/blender/enabled=false
+
+[input]
+
+"next song"={
+"deadzone": 1.0,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":83,"key_label":0,"unicode":115,"location":0,"echo":false,"script":null)
+]
+}
+"prev song"={
+"deadzone": 1.0,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":87,"key_label":0,"unicode":119,"location":0,"echo":false,"script":null)
+]
+}
 
 [rendering]
 

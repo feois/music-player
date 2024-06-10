@@ -1,18 +1,33 @@
-[gd_scene load_steps=3 format=3 uid="uid://b81u1c55uki6f"]
+[gd_scene load_steps=8 format=3 uid="uid://b81u1c55uki6f"]
 
 [ext_resource type="Script" path="res://src/root.gd" id="1_21msl"]
 [ext_resource type="Texture2D" uid="uid://d4misdx7d6u8c" path="res://src/icon.svg" id="2_8nwv5"]
+[ext_resource type="Texture2D" uid="uid://dotq3tixjvymo" path="res://src/Speaker_Icon.svg.png" id="3_mxx5r"]
 
-[node name="Root" type="Control"]
-layout_mode = 3
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ntp3s"]
+bg_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1sage"]
+bg_color = Color(0.247059, 0.247059, 0.247059, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ilpxc"]
+bg_color = Color(1, 1, 1, 1)
+
+[sub_resource type="Theme" id="Theme_vcmo2"]
+Panel/styles/panel = SubResource("StyleBoxFlat_ntp3s")
+ProgressBar/styles/background = SubResource("StyleBoxFlat_1sage")
+ProgressBar/styles/fill = SubResource("StyleBoxFlat_ilpxc")
+
+[node name="Root" type="Panel"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = SubResource("Theme_vcmo2")
 script = ExtResource("1_21msl")
 
-[node name="HSplitContainer" type="HSplitContainer" parent="."]
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -20,59 +35,126 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="HSplitContainer"]
+[node name="HSplitContainer" type="HSplitContainer" parent="HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Library" type="VBoxContainer" parent="HSplitContainer/ScrollContainer"]
+[node name="Library" type="Tree" parent="HBoxContainer/HSplitContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+allow_rmb_select = true
+allow_search = false
+hide_root = true
 
-[node name="VBoxContainer" type="VSplitContainer" parent="HSplitContainer"]
+[node name="VBoxContainer" type="VSplitContainer" parent="HBoxContainer/HSplitContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HSplitContainer/VBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="HBoxContainer" type="HBoxContainer" parent="HSplitContainer/VBoxContainer"]
+[node name="TestPrint" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="TextureRect" type="TextureRect" parent="HSplitContainer/VBoxContainer/HBoxContainer"]
+[node name="TextureRect" type="TextureRect" parent="HBoxContainer/HSplitContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 texture = ExtResource("2_8nwv5")
 expand_mode = 4
 stretch_mode = 5
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HSplitContainer/VBoxContainer/HBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 4.0
 
-[node name="Title" type="Label" parent="HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
+[node name="Title" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 max_lines_visible = 1
 
-[node name="Artist" type="Label" parent="HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
+[node name="Artist" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 max_lines_visible = 1
 
-[node name="Album" type="Label" parent="HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
+[node name="Album" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 max_lines_visible = 1
 
-[node name="ScrollContainer" type="ScrollContainer" parent="HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Lyrics" type="Label" parent="HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer/ScrollContainer"]
+[node name="Lyrics" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer/ScrollContainer"]
 unique_name_in_owner = true
 layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="HBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TextureRect" type="TextureRect" parent="HBoxContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+texture = ExtResource("3_mxx5r")
+expand_mode = 2
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="HBoxContainer/MarginContainer/VBoxContainer"]
+self_modulate = Color(1, 1, 1, 0)
+layout_mode = 2
+text = "100%%%%%%"
+horizontal_alignment = 1
+max_lines_visible = 1
+
+[node name="VolumeLabel" type="Label" parent="HBoxContainer/MarginContainer/VBoxContainer/Label"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "100%"
+horizontal_alignment = 1
+max_lines_visible = 1
+
+[node name="Volume" type="ProgressBar" parent="HBoxContainer/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(8, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+step = 1.0
+value = 100.0
+fill_mode = 3
+show_percentage = false
+
+[node name="Tree" type="Tree" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[connection signal="item_activated" from="HBoxContainer/HSplitContainer/Library" to="." method="_on_library_item_activated"]
+[connection signal="item_selected" from="HBoxContainer/HSplitContainer/Library" to="." method="_on_library_item_selected"]

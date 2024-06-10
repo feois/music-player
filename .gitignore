@@ -1,4 +1,9 @@
 /target
+Cargo.lock
+**/*.rs.bk
+
+# MSVC Windows builds of rustc generate these, which store debugging information
+*.pdb
 
 # Godot 4+ specific ignores
 src/gui/.godot/

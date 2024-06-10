@@ -8,3 +8,6 @@ id3 = "1.13.1"
 rdev = "0.5.3"
 rodio = "0.18.1"
 spin_sleep = "1.2.0"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+xosd-rs = "0.2.0"
