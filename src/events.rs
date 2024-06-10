@@ -60,10 +60,7 @@ impl Event {
     
     #[inline(always)]
     pub fn released(&self) -> bool {
-        match self {
-            Event::Released(..) => true,
-            _ => false,
-        }
+        !self.pressed()
     }
     
     #[inline(always)]
@@ -124,10 +121,12 @@ impl EventListener {
     
     #[inline(always)]
     pub fn poll_events(&mut self) {
-        for e in self.receiver.try_iter().filter_map(|e| e.try_into().ok()) {
-            match e {
-                Event::Pressed(k, _) => { self.keys.add(k); }
-                Event::Released(k, _) => { self.keys.remove(k); }
+        for e in self.receiver.try_iter().filter_map(|e| Event::try_from(e).ok()) {
+            if e.released() {
+                self.keys.remove(e.key());
+            }
+            else {
+                self.keys.add(e.key());
             }
         }
     }

@@ -33,9 +33,9 @@ var inputs := {}
 func _ready() -> void:
 	library.create_item()
 	opendir(
-		"/home/wilson/Music/Avicii"
-		#"Z:/home/wilson/Music/Avicii"
-		#"C:/Users/Admin/Music/Avicii"
+		"/home/wilson/Music"
+		#"Z:/home/wilson/Music"
+		#"C:/Users/Admin/Music"
 	)
 	Stdin.command.connect(command)
 
@@ -44,25 +44,32 @@ func _physics_process(_delta: float) -> void:
 	var selected := library.get_selected()
 	
 	if selected && library.has_focus():
-		var p := input(&"prev song")
-		var n := input(&"next song")
+		var p := input(&"prev")
+		var n := input(&"next")
 		
 		if p != n:
+			var item: TreeItem
+			
 			if p:
-				library.get_selected().get_prev_in_tree(true).select(0)
+				item = library.get_selected().get_prev_visible(true)
 			
 			if n:
-				library.get_selected().get_next_in_tree(true).select(0)
+				item = library.get_selected().get_next_visible(true)
+			
+			if library.get_root().get_child_count() > 0 && !item:
+				item = library.get_root().get_child(library.get_root().get_child_count() - 1)
+			
+			item.select(0)
 
 
 func input(event: StringName, d := 300000) -> bool:
 	var t := Time.get_ticks_usec()
 	
-	if Input.is_action_just_pressed(event):
+	if Input.is_action_just_pressed(event, true):
 		inputs[event] = t
 		return true
 	else:
-		return Input.is_action_pressed(event) && t - inputs[event] > d
+		return Input.is_action_pressed(event, true) && t - inputs[event] > d
 
 
 func opendir(path: String) -> void:
@@ -89,9 +96,9 @@ func opendir(path: String) -> void:
 			opendir(path.path_join(directory))
 
 
-func reparent_item(item: TreeItem, parent: TreeItem, f: Callable) -> void:
+func reparent_item(item: TreeItem, parent: TreeItem) -> void:
 	if parent.get_child_count() > 0:
-		var index := parent.get_children().bsearch_custom(item, f)
+		var index := parent.get_children().bsearch_custom(item, comparer)
 		
 		if index < parent.get_child_count():
 			item.move_before(parent.get_child(index))
@@ -101,6 +108,10 @@ func reparent_item(item: TreeItem, parent: TreeItem, f: Callable) -> void:
 	parent.add_child(item)
 
 
+func comparer(x: TreeItem, y: TreeItem) -> bool:
+	return x.get_text(0) < y.get_text(0)
+
+
 func get_artist(artist: String) -> TreeItem:
 	if artists.has(artist):
 		return artists[artist]
@@ -108,11 +119,30 @@ func get_artist(artist: String) -> TreeItem:
 	var item := treeroot.create_child()
 	
 	item.set_text(0, artist)
+	item.set_meta(&"albums", {})
 	
-	reparent_item(item, library.get_root(), func (x: TreeItem, y: TreeItem) -> bool:
-		return x.get_text(0) < y.get_text(0))
+	reparent_item(item, library.get_root())
 	
 	artists[artist] = item
+	
+	return item
+
+
+func get_album(artist: TreeItem, album: String) -> TreeItem:
+	var d := artist.get_meta(&"albums", {}) as Dictionary
+	
+	if d.has(album):
+		return d[album]
+	
+	var item := treeroot.create_child()
+	
+	item.set_text(0, album)
+	
+	reparent_item(item, artist)
+	
+	d[album] = item
+	
+	artist.set_meta(&"albums", d)
 	
 	return item
 
@@ -122,9 +152,10 @@ func get_song(item: TreeItem) -> Song:
 
 
 func add_song(song: Song) -> void:
-	reparent_item(song.item, get_artist(song.artist), func (x: TreeItem, y: TreeItem) -> bool:
-		return get_song(x).title < get_song(y).title)
 	song.item.set_text(0, song.title)
+	song.item.add_button(0, preload("res://src/small-icon.svg"))
+	
+	reparent_item(song.item, get_album(get_artist(song.artist), song.album))
 
 
 func read_tag(string: String) -> void:

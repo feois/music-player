@@ -1,8 +1,9 @@
-[gd_scene load_steps=8 format=3 uid="uid://b81u1c55uki6f"]
+[gd_scene load_steps=10 format=3 uid="uid://b81u1c55uki6f"]
 
 [ext_resource type="Script" path="res://src/root.gd" id="1_21msl"]
 [ext_resource type="Texture2D" uid="uid://d4misdx7d6u8c" path="res://src/icon.svg" id="2_8nwv5"]
 [ext_resource type="Texture2D" uid="uid://dotq3tixjvymo" path="res://src/Speaker_Icon.svg.png" id="3_mxx5r"]
+[ext_resource type="Script" path="res://src/volume.gd" id="4_4f0bk"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ntp3s"]
 bg_color = Color(0, 0, 0, 1)
@@ -13,10 +14,15 @@ bg_color = Color(0.247059, 0.247059, 0.247059, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ilpxc"]
 bg_color = Color(1, 1, 1, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpudu"]
+bg_color = Color(0, 0.443647, 0.790201, 1)
+
 [sub_resource type="Theme" id="Theme_vcmo2"]
 Panel/styles/panel = SubResource("StyleBoxFlat_ntp3s")
 ProgressBar/styles/background = SubResource("StyleBoxFlat_1sage")
 ProgressBar/styles/fill = SubResource("StyleBoxFlat_ilpxc")
+Tree/styles/selected = SubResource("StyleBoxFlat_xpudu")
+Tree/styles/selected_focus = SubResource("StyleBoxFlat_xpudu")
 
 [node name="Root" type="Panel"]
 anchors_preset = 15
@@ -101,14 +107,14 @@ layout_mode = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="HBoxContainer"]
 layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 32
 
 [node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/MarginContainer"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 16
 
 [node name="TextureRect" type="TextureRect" parent="HBoxContainer/MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(32, 32)
@@ -120,7 +126,7 @@ stretch_mode = 5
 [node name="Label" type="Label" parent="HBoxContainer/MarginContainer/VBoxContainer"]
 self_modulate = Color(1, 1, 1, 0)
 layout_mode = 2
-text = "100%%%%%%"
+text = "100%"
 horizontal_alignment = 1
 max_lines_visible = 1
 
@@ -138,14 +144,15 @@ max_lines_visible = 1
 
 [node name="Volume" type="ProgressBar" parent="HBoxContainer/MarginContainer/VBoxContainer"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(8, 0)
+custom_minimum_size = Vector2(16, 0)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 3
-step = 1.0
+focus_mode = 1
 value = 100.0
 fill_mode = 3
 show_percentage = false
+script = ExtResource("4_4f0bk")
 
 [node name="Tree" type="Tree" parent="."]
 visible = false

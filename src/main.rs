@@ -1,6 +1,6 @@
 // #![windows_subsystem = "windows"]
 
-use std::{env::current_exe, path::Path, time::{Duration, Instant}};
+use std::{env::current_exe, time::{Duration, Instant}};
 
 mod gui;
 mod player;
