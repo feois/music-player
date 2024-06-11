@@ -86,11 +86,8 @@ impl<const BUFFER_SIZE: usize> GUI<BUFFER_SIZE> {
     }
     
     #[inline(always)]
-    pub fn kill(self) {
-        let Self { mut process, receiver, .. } = self;
-        
-        std::mem::drop(receiver);
-        
-        process.kill().expect("Failed to kill GUI");
+    pub fn close(mut self) {
+        self.write_line("EXIT");
+        self.process.wait().unwrap();
     }
 }

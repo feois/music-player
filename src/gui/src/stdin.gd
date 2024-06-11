@@ -10,15 +10,12 @@ func _ready() -> void:
 	
 	thread.start(
 		func ():
-			while true:
-				var s := OS.read_string_from_stdin().c_unescape()
-				
+			var s := ""
+			
+			while s != "EXIT":
+				s = OS.read_string_from_stdin()
+				s = s.c_unescape()
 				s = s.substr(0, s.length() - 1)
 				
 				call_thread_safe(&"emit_signal", &"command", s)
 	)
-
-
-func _exit_tree() -> void:
-	print("EXIT")
-	thread.wait_to_finish()

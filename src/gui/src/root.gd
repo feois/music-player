@@ -1,6 +1,7 @@
 extends Panel
 
 
+const CACHE_FILE := "user://cache.json"
 const DELIMETER := "::::"
 
 enum TagMode {
@@ -19,11 +20,12 @@ class Song extends Resource:
 	var artist: String
 	var album: String
 	var lyrics: String
-	var item: TreeItem
 
 
 var songs := {}
 var artists := {}
+var song_items := {}
+var uninitalized_songs := {}
 var inputs := {}
 
 @onready var library: Tree = %Library
@@ -31,13 +33,15 @@ var inputs := {}
 
 
 func _ready() -> void:
+	get_tree().set_auto_accept_quit(false)
 	library.create_item()
-	opendir(
-		#"/home/wilson/Music"
-		#"Z:/home/wilson/Music"
-		"C:/Users/Admin/Music"
-	)
 	Stdin.command.connect(command)
+	
+	if read_cache():
+		for song in songs.values():
+			add_song(song)
+	else:
+		scan_library()
 
 
 func _physics_process(_delta: float) -> void:
@@ -61,6 +65,16 @@ func _physics_process(_delta: float) -> void:
 			
 			item.select(0)
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		prints("EXIT")
+
+
+func save_cache() -> void:
+	FileAccess.open(CACHE_FILE, FileAccess.WRITE).store_string(JSON.stringify({
+		"songs": serialize_songs()
+	}, "\t"))
+
 
 func input(event: StringName, d := 300000) -> bool:
 	var t := Time.get_ticks_usec()
@@ -72,6 +86,56 @@ func input(event: StringName, d := 300000) -> bool:
 		return Input.is_action_pressed(event, true) && t - inputs[event] > d
 
 
+func read_cache() -> bool:
+	if FileAccess.file_exists(CACHE_FILE):
+		var file := FileAccess.open(CACHE_FILE, FileAccess.READ)
+		
+		if file:
+			var json = JSON.parse_string(file.get_as_text())
+			
+			if json:
+				var songs_dict: Dictionary = json["songs"]
+				
+				for path in songs_dict:
+					var song := Song.new()
+					var song_dict: Dictionary = songs_dict[path]
+					
+					song.path = path
+					song.title = song_dict["title"]
+					song.artist = song_dict["artist"]
+					song.album = song_dict["album"]
+					song.lyrics = song_dict["lyrics"].c_unescape()
+					
+					songs[path] = song
+				
+				return true
+	
+	return false
+
+func scan_library() -> void:
+	opendir(
+		"/home/wilson/Music"
+		#"Z:/home/wilson/Music"
+		#"C:/Users/Admin/Music"
+	)
+
+
+func serialize_songs() -> Dictionary:
+	var dict := {}
+	
+	for path in songs:
+		var song := songs[path] as Song
+		
+		dict[path] = {
+			"title": song.title,
+			"artist": song.artist,
+			"album": song.album,
+			"lyrics": song.lyrics.c_escape(),
+		}
+	
+	return dict
+
+
 func opendir(path: String) -> void:
 	var dir := DirAccess.open(path)
 	
@@ -81,16 +145,7 @@ func opendir(path: String) -> void:
 		
 		for file in files:
 			if file.ends_with(".mp3"):
-				var song := Song.new()
-				
-				song.path = path.path_join(file)
-				song.item = treeroot.create_child()
-				song.item.set_meta(&"songres", song)
-				song.item.set_text(0, song.path)
-				
-				songs[song.path] = song
-				
-				prints("READTAG", song.path)
+				prints("READTAG", path.path_join(file))
 		
 		for directory in dirs:
 			opendir(path.path_join(directory))
@@ -152,15 +207,20 @@ func get_song(item: TreeItem) -> Song:
 
 
 func add_song(song: Song) -> void:
-	song.item.set_text(0, song.title)
-	song.item.add_button(0, preload("res://src/small-icon.svg"))
+	var item := treeroot.create_child()
 	
-	reparent_item(song.item, get_album(get_artist(song.artist), song.album))
+	item.set_text(0, song.title)
+	item.add_button(0, preload("res://src/small-icon.svg"))
+	item.set_meta(&"songres", song)
+	
+	song_items[song.path] = item
+	
+	reparent_item(item, get_album(get_artist(song.artist), song.album))
 
 
 func read_tag(string: String) -> void:
 	var mode := TagMode.NONE
-	var song: Song
+	var song := Song.new()
 	
 	for section in string.split(DELIMETER):
 		if mode == TagMode.NONE:
@@ -182,7 +242,8 @@ func read_tag(string: String) -> void:
 		else:
 			match mode:
 				TagMode.PATH:
-					song = songs[section]
+					song.path = section
+					songs[section] = song
 				
 				TagMode.TITLE:
 					song.title = section
@@ -198,9 +259,15 @@ func read_tag(string: String) -> void:
 			
 			mode = TagMode.NONE
 	
+	song_items[song.path].set_meta(&"songres", song)
+	
 	add_song(song)
 
 func command(string: String) -> void:
+	if string == "EXIT":
+		save_cache()
+		get_tree().quit()
+	
 	if string.begins_with("TAGOF"):
 		read_tag(string)
 	

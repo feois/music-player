@@ -88,12 +88,12 @@ fn launch_gui(gui: &mut Option<GUI>) {
     dir.pop();
     dir.push("godot");
     
-    gui.replace(GUI::launch(dir.as_os_str().to_str().unwrap())).map(GUI::kill);
+    gui.replace(GUI::launch(dir.as_os_str().to_str().unwrap())).map(GUI::close);
 }
 
 #[inline(always)]
 fn kill_gui(gui: &mut Option<GUI>) {
-    gui.take().map(GUI::kill);
+    gui.take().map(GUI::close);
 }
 
 fn main() {
@@ -155,17 +155,10 @@ fn main() {
                     _ => println!("GODOT: {}", command),
                 }
             }
-            
-            if close_gui {
-                gui.endline();
-            }
         }
         
-        
-        // kill when finished
         if close_gui || gui.as_mut().is_some_and(GUI::finished) {
-            println!("TASK: Closing GUI");
-            kill_gui(&mut gui);
+            gui.take().map(GUI::close);
         }
         
         // key events
