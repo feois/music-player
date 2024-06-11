@@ -9,7 +9,7 @@ func update(pos: Vector2) -> void:
 	
 	value = (1 - target) * 100
 	
-	%VolumeLabel.text = str(roundi(value)) + "%"
+	%VolumeLabel.text = str(roundi(target * 100)) + "%"
 	
 	prints("VOLUME", target)
 

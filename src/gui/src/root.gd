@@ -33,9 +33,9 @@ var inputs := {}
 func _ready() -> void:
 	library.create_item()
 	opendir(
-		"/home/wilson/Music"
+		#"/home/wilson/Music"
 		#"Z:/home/wilson/Music"
-		#"C:/Users/Admin/Music"
+		"C:/Users/Admin/Music"
 	)
 	Stdin.command.connect(command)
 

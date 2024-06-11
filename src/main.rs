@@ -18,41 +18,6 @@ use xosd_rs::Xosd;
 const DELIMETER: &str = "::::";
 
 
-// #[cfg(target_os = "windows")]
-// mod testwin {
-//     use native_windows_gui::*;//{dispatch_thread_events_with_callback, NativeUi, Window, Label, stop_thread_dispatch};
-//     use native_windows_derive::NwgUi;
-    
-//     #[derive(Default, NwgUi)]
-//     pub struct App {
-//         #[nwg_control(size: (500, 80), position: (100, 100), title: "test", flags: "VISIBLE|WINDOW")]//, ex_flags: 524456)]
-//         #[nwg_events( OnWindowClose: [App::testf] )]
-//         window: Window,
-        
-//         #[nwg_control(position: (10, 10), size: (200, 20), text: "Test")]
-//         label: Label,
-//     }
-    
-//     impl App {
-//         fn testf(&self) {
-//             stop_thread_dispatch();
-//         }
-//     }
-    
-//     pub fn f() {
-//         let flags = 524456; //0x00080000 | 0x00000080 | 0x00000008 | 0x00000020;
-        
-//         native_windows_gui::init().expect("Failed to init Windows GUI");
-        
-//         let _ = App::build_ui(Default::default()).expect("Failed to build UI");
-        
-//         loop {
-//         dispatch_thread_events();//_with_callback(|| ());
-//         }
-//     }
-// }
-
-
 pub trait BooleanConditional {
     fn ifdo(self, f: impl FnOnce()) -> Self;
     fn elsedo(self, f: impl FnOnce()) -> Self;
@@ -150,7 +115,7 @@ fn main() {
     let volume_increase = listener.register_combination(&[Key::Alt, Key::UpArrow], key_duration);
     let volume_decrease = listener.register_combination(&[Key::Alt, Key::DownArrow], key_duration);
     
-    // launch_gui(&mut gui);
+    launch_gui(&mut gui);
     
     // let mut xosd = Xosd::new(1).unwrap();
     
@@ -160,14 +125,7 @@ fn main() {
     // xosd.set_vertical_align(xosd_rs::VerticalAlign::Top).unwrap();
     // xosd.display(0, Command::String(flags.to_string())).unwrap();
     
-    // #[cfg(target_os = "windows")]
-    // testwin::f();
-    
-    // println!("loop");
-    
     'event_loop: loop {
-        // break;
-        
         let t = Instant::now();
         
         let mut close_gui = false;
