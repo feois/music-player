@@ -6,7 +6,7 @@ pub use std::time::SystemTime as Time;
 use crate::BooleanConditional;
 
 
-pub struct KeyCombination(HashSet<Key>);
+struct KeyCombination(HashSet<Key>);
 
 impl KeyCombination {
     #[inline(always)]
@@ -46,7 +46,7 @@ pub enum Event {
 pub struct EventListener {
     receiver: Receiver<rdev::Event>,
     keys: KeyCombination,
-    combinations: Vec<(KeyCombination, Duration, Option<Instant>)>,
+    combinations: Vec<(KeyCombination, Duration, Option<Instant>, bool)>,
 }
 
 impl Event {
@@ -121,6 +121,8 @@ impl EventListener {
     
     #[inline(always)]
     pub fn poll_events(&mut self) {
+        let now = Instant::now();
+        
         for e in self.receiver.try_iter().filter_map(|e| Event::try_from(e).ok()) {
             if e.released() {
                 self.keys.remove(e.key());
@@ -129,13 +131,19 @@ impl EventListener {
                 self.keys.add(e.key());
             }
         }
+        
+        for (comb, duration, t, flag) in &mut self.combinations {
+            let overtime = !t.is_some_and(|t| now - t < *duration);
+            
+            *flag = self.keys.includes(comb).elsedo(|| { t.take(); }) && overtime.ifdo(|| { t.replace(now); });
+        }
     }
     
     #[inline(always)]
     pub fn register_combination<T: Borrow<Key>>(&mut self, keys: impl IntoIterator<Item = T>, duration: Duration) -> usize {
         let id = self.combinations.len();
         
-        self.combinations.push((keys.into_iter().map(|t| *t.borrow()).collect(), duration, None));
+        self.combinations.push((keys.into_iter().map(|t| *t.borrow()).collect(), duration, None, false));
         
         id
     }
@@ -146,21 +154,12 @@ impl EventListener {
     }
     
     #[inline(always)]
-    pub fn is_key_pressed<T: Borrow<Key>>(&self, keys: impl IntoIterator<Item = T>) -> bool {
-        self.keys.includes(&keys.into_iter().map(|t| *t.borrow()).collect())
+    pub fn is_pressed(&self, combination: usize) -> bool {
+        self.combinations[combination].3
     }
     
     #[inline(always)]
-    pub fn consume_if_pressed(&mut self, combination: usize) -> bool {
-        let now = Instant::now();
-        let (comb, duration, t) = &mut self.combinations[combination];
-        let overtime = !t.is_some_and(|t| now - t < *duration);
-        
-        self.keys.includes(comb).elsedo(|| { t.take(); }) && overtime.ifdo(|| { t.replace(now); })
-    }
-    
-    #[inline(always)]
-    pub fn consume_all(&mut self) -> impl Iterator<Item = usize> + '_ {
-        (0..self.combinations.len()).filter_map(|i| self.consume_if_pressed(i).then_some(i))
+    pub fn iter_pressed(&self) -> impl Iterator<Item = usize> + '_ {
+        (0..self.combinations.len()).filter(|&i| self.is_pressed(i))
     }
 }

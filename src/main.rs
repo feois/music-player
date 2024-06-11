@@ -14,7 +14,44 @@ use id3::{Tag, TagLike};
 #[cfg(target_os = "linux")]
 use xosd_rs::Xosd;
 
+
 const DELIMETER: &str = "::::";
+
+
+// #[cfg(target_os = "windows")]
+// mod testwin {
+//     use native_windows_gui::*;//{dispatch_thread_events_with_callback, NativeUi, Window, Label, stop_thread_dispatch};
+//     use native_windows_derive::NwgUi;
+    
+//     #[derive(Default, NwgUi)]
+//     pub struct App {
+//         #[nwg_control(size: (500, 80), position: (100, 100), title: "test", flags: "VISIBLE|WINDOW")]//, ex_flags: 524456)]
+//         #[nwg_events( OnWindowClose: [App::testf] )]
+//         window: Window,
+        
+//         #[nwg_control(position: (10, 10), size: (200, 20), text: "Test")]
+//         label: Label,
+//     }
+    
+//     impl App {
+//         fn testf(&self) {
+//             stop_thread_dispatch();
+//         }
+//     }
+    
+//     pub fn f() {
+//         let flags = 524456; //0x00080000 | 0x00000080 | 0x00000008 | 0x00000020;
+        
+//         native_windows_gui::init().expect("Failed to init Windows GUI");
+        
+//         let _ = App::build_ui(Default::default()).expect("Failed to build UI");
+        
+//         loop {
+//         dispatch_thread_events();//_with_callback(|| ());
+//         }
+//     }
+// }
+
 
 pub trait BooleanConditional {
     fn ifdo(self, f: impl FnOnce()) -> Self;
@@ -67,7 +104,7 @@ fn read_tags(gui: &mut GUI, path: &str) {
 }
 
 #[inline(always)]
-fn set_volume(gui: &mut Option<GUI>, player: &Player, mut target: f32, volume: &mut f32) {
+fn set_volume(gui: Option<&mut GUI>, player: &Player, mut target: f32, volume: &mut f32) {
     target = target.clamp(0., 1.);
     
     *volume = target;
@@ -113,9 +150,7 @@ fn main() {
     let volume_increase = listener.register_combination(&[Key::Alt, Key::UpArrow], key_duration);
     let volume_decrease = listener.register_combination(&[Key::Alt, Key::DownArrow], key_duration);
     
-    launch_gui(&mut gui);
-    
-    let flags = 524456; //0x00080000 | 0x00000080 | 0x00000008 | 0x00000020;
+    // launch_gui(&mut gui);
     
     // let mut xosd = Xosd::new(1).unwrap();
     
@@ -125,7 +160,14 @@ fn main() {
     // xosd.set_vertical_align(xosd_rs::VerticalAlign::Top).unwrap();
     // xosd.display(0, Command::String(flags.to_string())).unwrap();
     
+    // #[cfg(target_os = "windows")]
+    // testwin::f();
+    
+    // println!("loop");
+    
     'event_loop: loop {
+        // break;
+        
         let t = Instant::now();
         
         let mut close_gui = false;
@@ -147,7 +189,9 @@ fn main() {
                         
                         volume = v;
                         player.volume(volume);
-                    },
+                    }
+                    "VOLINC" => set_volume(Some(gui), &player, volume + volume_step, &mut volume),
+                    "VOLDEC" => set_volume(Some(gui), &player, volume - volume_step, &mut volume),
                     "INFO" => println!("GODOT-PRINT: {}", args),
                     "EXIT" => close_gui = true,
                     _ => println!("GODOT: {}", command),
@@ -169,7 +213,7 @@ fn main() {
         // key events
         listener.poll_events();
         
-        for comb in listener.consume_all() {
+        for comb in listener.iter_pressed() {
             if comb == toggle_gui {
                 if gui.is_none() {
                     launch_gui(&mut gui);
@@ -198,11 +242,11 @@ fn main() {
             }
             
             if comb == volume_increase {
-                set_volume(&mut gui, &player, volume + volume_step, &mut volume);
+                set_volume(gui.as_mut(), &player, volume + volume_step, &mut volume);
             }
             
             if comb == volume_decrease {
-                set_volume(&mut gui, &player, volume - volume_step, &mut volume);
+                set_volume(gui.as_mut(), &player, volume - volume_step, &mut volume);
             }
         }
         

@@ -208,7 +208,7 @@ func command(string: String) -> void:
 		var volume := string.split(DELIMETER)[1]
 		
 		%VolumeLabel.text = volume + "%"
-		%Volume.value = int(volume)
+		%Volume.value = 100 - int(volume)
 
 
 func _on_library_item_activated() -> void:

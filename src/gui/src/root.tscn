@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://b81u1c55uki6f"]
+[gd_scene load_steps=12 format=3 uid="uid://b81u1c55uki6f"]
 
 [ext_resource type="Script" path="res://src/root.gd" id="1_21msl"]
 [ext_resource type="Texture2D" uid="uid://d4misdx7d6u8c" path="res://src/icon.svg" id="2_8nwv5"]
@@ -8,19 +8,30 @@
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ntp3s"]
 bg_color = Color(0, 0, 0, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1sage"]
-bg_color = Color(0.247059, 0.247059, 0.247059, 1)
+[sub_resource type="Gradient" id="Gradient_cp2t4"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(1, 0.498039, 1, 1, 1, 1, 0.498039, 1, 0.498039, 1, 1, 1)
+metadata/_snap_enabled = true
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ilpxc"]
-bg_color = Color(1, 1, 1, 1)
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_bunap"]
+gradient = SubResource("Gradient_cp2t4")
+fill_from = Vector2(0.5, 0)
+fill_to = Vector2(0.5, 1)
+metadata/_snap_enabled = true
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_nyu3b"]
+texture = SubResource("GradientTexture2D_bunap")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i7pdw"]
+bg_color = Color(0, 0, 0, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpudu"]
 bg_color = Color(0, 0.443647, 0.790201, 1)
 
 [sub_resource type="Theme" id="Theme_vcmo2"]
 Panel/styles/panel = SubResource("StyleBoxFlat_ntp3s")
-ProgressBar/styles/background = SubResource("StyleBoxFlat_1sage")
-ProgressBar/styles/fill = SubResource("StyleBoxFlat_ilpxc")
+ProgressBar/styles/background = SubResource("StyleBoxTexture_nyu3b")
+ProgressBar/styles/fill = SubResource("StyleBoxFlat_i7pdw")
 Tree/styles/selected = SubResource("StyleBoxFlat_xpudu")
 Tree/styles/selected_focus = SubResource("StyleBoxFlat_xpudu")
 
@@ -66,42 +77,43 @@ size_flags_vertical = 3
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
+[node name="Details" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="TextureRect" type="TextureRect" parent="HBoxContainer/HSplitContainer/VBoxContainer/HBoxContainer"]
+[node name="TextureRect" type="TextureRect" parent="HBoxContainer/HSplitContainer/VBoxContainer/Details"]
 layout_mode = 2
 size_flags_horizontal = 3
 texture = ExtResource("2_8nwv5")
 expand_mode = 4
 stretch_mode = 5
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/HBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/Details"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 4.0
 
-[node name="Title" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
+[node name="Title" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/Details/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 max_lines_visible = 1
 
-[node name="Artist" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
+[node name="Artist" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/Details/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 max_lines_visible = 1
 
-[node name="Album" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
+[node name="Album" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/Details/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 max_lines_visible = 1
 
-[node name="ScrollContainer" type="ScrollContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/Details/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Lyrics" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/HBoxContainer/VBoxContainer/ScrollContainer"]
+[node name="Lyrics" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/Details/VBoxContainer/ScrollContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 
@@ -144,13 +156,12 @@ max_lines_visible = 1
 
 [node name="Volume" type="ProgressBar" parent="HBoxContainer/MarginContainer/VBoxContainer"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(16, 0)
+custom_minimum_size = Vector2(24, 0)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 3
 focus_mode = 1
-value = 100.0
-fill_mode = 3
+fill_mode = 2
 show_percentage = false
 script = ExtResource("4_4f0bk")
 

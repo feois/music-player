@@ -11,3 +11,7 @@ spin_sleep = "1.2.0"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 xosd-rs = "0.2.0"
+
+# [target.'cfg(target_os = "windows")'.dependencies]
+# native-windows-gui = "1.0.13"
+# native-windows-derive = "1.0.5"
