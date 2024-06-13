@@ -1,12 +1,43 @@
-[gd_scene load_steps=12 format=3 uid="uid://b81u1c55uki6f"]
+[gd_scene load_steps=21 format=3 uid="uid://b81u1c55uki6f"]
 
 [ext_resource type="Script" path="res://src/root.gd" id="1_21msl"]
+[ext_resource type="FontFile" uid="uid://b3q82j6u0njhn" path="res://src/Everson Mono.ttf" id="1_t6ide"]
+[ext_resource type="Texture2D" uid="uid://cjpm38rup3rad" path="res://src/gear.svg" id="2_7l7ln"]
 [ext_resource type="Texture2D" uid="uid://d4misdx7d6u8c" path="res://src/icon.svg" id="2_8nwv5"]
 [ext_resource type="Texture2D" uid="uid://dotq3tixjvymo" path="res://src/Speaker_Icon.svg.png" id="3_mxx5r"]
+[ext_resource type="Texture2D" uid="uid://dgc306n3ergil" path="res://src/Refresh_icon.png" id="3_somee"]
 [ext_resource type="Script" path="res://src/volume.gd" id="4_4f0bk"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ntp3s"]
 bg_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cxqju"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 16
+border_width_right = 16
+border_color = Color(0, 0, 0, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fir5g"]
+bg_color = Color(0.2484, 0.2484, 0.2484, 1)
+border_width_left = 16
+border_width_right = 16
+border_color = Color(0.2484, 0.2484, 0.2484, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hqfqr"]
+bg_color = Color(0.497474, 0.497474, 0.497474, 1)
+border_width_left = 16
+border_width_right = 16
+border_color = Color(0.497474, 0.497474, 0.497473, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_acikd"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ecv6u"]
+bg_color = Color(0.258708, 0.606157, 1, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ohu8p"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpudu"]
+bg_color = Color(0, 0.443647, 0.790201, 1)
 
 [sub_resource type="Gradient" id="Gradient_cp2t4"]
 offsets = PackedFloat32Array(0, 0.5, 1)
@@ -25,15 +56,25 @@ texture = SubResource("GradientTexture2D_bunap")
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i7pdw"]
 bg_color = Color(0, 0, 0, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpudu"]
-bg_color = Color(0, 0.443647, 0.790201, 1)
-
 [sub_resource type="Theme" id="Theme_vcmo2"]
 Panel/styles/panel = SubResource("StyleBoxFlat_ntp3s")
-ProgressBar/styles/background = SubResource("StyleBoxTexture_nyu3b")
-ProgressBar/styles/fill = SubResource("StyleBoxFlat_i7pdw")
+SongControl/base_type = &"Button"
+SongControl/font_sizes/font_size = 64
+SongControl/fonts/font = ExtResource("1_t6ide")
+SongControl/styles/disabled = SubResource("StyleBoxFlat_cxqju")
+SongControl/styles/focus = null
+SongControl/styles/hover = SubResource("StyleBoxFlat_fir5g")
+SongControl/styles/normal = SubResource("StyleBoxFlat_cxqju")
+SongControl/styles/pressed = SubResource("StyleBoxFlat_hqfqr")
+SongProgress/base_type = &"ProgressBar"
+SongProgress/styles/background = SubResource("StyleBoxEmpty_acikd")
+SongProgress/styles/fill = SubResource("StyleBoxFlat_ecv6u")
+Tree/styles/panel = SubResource("StyleBoxEmpty_ohu8p")
 Tree/styles/selected = SubResource("StyleBoxFlat_xpudu")
 Tree/styles/selected_focus = SubResource("StyleBoxFlat_xpudu")
+Volume/base_type = &"ProgressBar"
+Volume/styles/background = SubResource("StyleBoxTexture_nyu3b")
+Volume/styles/fill = SubResource("StyleBoxFlat_i7pdw")
 
 [node name="Root" type="Panel"]
 anchors_preset = 15
@@ -56,10 +97,31 @@ grow_vertical = 2
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Library" type="Tree" parent="HBoxContainer/HSplitContainer"]
-unique_name_in_owner = true
+[node name="VBoxContainer2" type="VBoxContainer" parent="HBoxContainer/HSplitContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer2"]
+layout_mode = 2
+
+[node name="Settings" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer2/HBoxContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+tooltip_text = "Settings"
+icon = ExtResource("2_7l7ln")
+expand_icon = true
+
+[node name="ReloadLibrary" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer2/HBoxContainer"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+tooltip_text = "Refresh Library"
+icon = ExtResource("3_somee")
+expand_icon = true
+
+[node name="Library" type="Tree" parent="HBoxContainer/HSplitContainer/VBoxContainer2"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
 allow_rmb_select = true
 allow_search = false
 hide_root = true
@@ -77,44 +139,135 @@ size_flags_vertical = 3
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Details" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
+[node name="Player" type="VBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="TextureRect" type="TextureRect" parent="HBoxContainer/HSplitContainer/VBoxContainer/Details"]
+[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TextureRect" type="TextureRect" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 texture = ExtResource("2_8nwv5")
 expand_mode = 4
 stretch_mode = 5
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/Details"]
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 4.0
 
-[node name="Title" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/Details/VBoxContainer"]
+[node name="Title" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 max_lines_visible = 1
 
-[node name="Artist" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/Details/VBoxContainer"]
+[node name="Artist" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 max_lines_visible = 1
 
-[node name="Album" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/Details/VBoxContainer"]
+[node name="Album" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 max_lines_visible = 1
 
-[node name="ScrollContainer" type="ScrollContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/Details/VBoxContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/HBoxContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Lyrics" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/Details/VBoxContainer/ScrollContainer"]
+[node name="Lyrics" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/HBoxContainer/VBoxContainer/ScrollContainer"]
 unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SongProgress" type="ProgressBar" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+theme_type_variation = &"SongProgress"
+value = 50.0
+show_percentage = false
+
+[node name="ControlBar" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player"]
+layout_mode = 2
+alignment = 1
+
+[node name="Repeat" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"SongControl"
+text = "🔁"
+expand_icon = true
+
+[node name="PreviousSong" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Previous Song"
+theme_type_variation = &"SongControl"
+text = "⏴"
+expand_icon = true
+
+[node name="ToBegin" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Rewind to the beginning"
+theme_type_variation = &"SongControl"
+text = "⏮"
+expand_icon = true
+
+[node name="Rewind" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Rewind"
+theme_type_variation = &"SongControl"
+text = "⏪"
+expand_icon = true
+
+[node name="PlayPauseResume" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Play / Pause"
+theme_type_variation = &"SongControl"
+text = "⏵"
+expand_icon = true
+
+[node name="FastForward" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Fast Forward"
+theme_type_variation = &"SongControl"
+text = "⏩"
+expand_icon = true
+
+[node name="ToEnd" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Fast forward to the end"
+theme_type_variation = &"SongControl"
+text = "⏭"
+expand_icon = true
+
+[node name="StopSong" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "Stop"
+theme_type_variation = &"SongControl"
+text = "⏹"
+expand_icon = true
+
+[node name="Shuffle" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar"]
+unique_name_in_owner = true
+layout_mode = 2
+tooltip_text = "bt"
+theme_type_variation = &"SongControl"
+text = "🔀"
+expand_icon = true
+
+[node name="Margin" type="Control" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player"]
+custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="HBoxContainer"]
@@ -161,6 +314,7 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 3
 focus_mode = 1
+theme_type_variation = &"Volume"
 fill_mode = 2
 show_percentage = false
 script = ExtResource("4_4f0bk")
@@ -174,5 +328,47 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[connection signal="item_activated" from="HBoxContainer/HSplitContainer/Library" to="." method="_on_library_item_activated"]
-[connection signal="item_selected" from="HBoxContainer/HSplitContainer/Library" to="." method="_on_library_item_selected"]
+[node name="SettingsPanel" type="Window" parent="."]
+title = "Settings"
+initial_position = 2
+size = Vector2i(500, 500)
+visible = false
+wrap_controls = true
+transient = true
+exclusive = true
+
+[node name="Panel" type="Panel" parent="SettingsPanel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Settings" type="Tree" parent="SettingsPanel/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+columns = 2
+column_titles_visible = true
+hide_folding = true
+hide_root = true
+drop_mode_flags = 3
+
+[node name="LibraryPathSelector" type="FileDialog" parent="SettingsPanel"]
+title = "Open a Directory"
+ok_button_text = "Select Current Folder"
+file_mode = 2
+access = 2
+use_native_dialog = true
+
+[connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer2/HBoxContainer/Settings" to="." method="_on_settings_pressed"]
+[connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer2/HBoxContainer/ReloadLibrary" to="." method="_on_reload_library_pressed"]
+[connection signal="item_activated" from="HBoxContainer/HSplitContainer/VBoxContainer2/Library" to="." method="_on_library_item_activated"]
+[connection signal="item_selected" from="HBoxContainer/HSplitContainer/VBoxContainer2/Library" to="." method="_on_library_item_selected"]
+[connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar/PlayPauseResume" to="." method="_on_play_pause_resume_pressed"]
+[connection signal="close_requested" from="SettingsPanel" to="." method="_on_settings_panel_close_requested"]
+[connection signal="button_clicked" from="SettingsPanel/Panel/Settings" to="." method="_on_settings_button_clicked"]
+[connection signal="dir_selected" from="SettingsPanel/LibraryPathSelector" to="." method="_on_library_path_selector_dir_selected"]

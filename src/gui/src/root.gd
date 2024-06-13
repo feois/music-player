@@ -2,7 +2,8 @@ extends Panel
 
 
 const CACHE_FILE := "user://cache.json"
-const DELIMETER := "::::"
+const PLAY_SYMBOL := "⏵"
+const PAUSE_SYMBOL := "⏸"
 
 enum TagMode {
 	NONE,
@@ -11,15 +12,16 @@ enum TagMode {
 	ALBUM,
 	ARTIST,
 	LYRICS,
-	SYNCED,
+	DURATION,
 }
 
-class Song extends Resource:
+class Song extends RefCounted:
 	var path: String
 	var title: String
 	var artist: String
 	var album: String
 	var lyrics: String
+	var duration: int
 
 
 var songs := {}
@@ -28,6 +30,17 @@ var song_items := {}
 var uninitalized_songs := {}
 var inputs := {}
 
+var is_pausing := false
+
+var settings_library_path: TreeItem
+
+@onready var default_library_path := OS.get_environment("USERPROFILE" if OS.has_feature("windows") else "HOME").path_join("Music")
+@onready var library_path := default_library_path:
+	set(value):
+		library_path = value
+		
+		if settings_library_path:
+			settings_library_path.set_text(1, value)
 @onready var library: Tree = %Library
 @onready var treeroot: TreeItem = $Tree.create_item()
 
@@ -37,11 +50,13 @@ func _ready() -> void:
 	library.create_item()
 	Stdin.command.connect(command)
 	
+	init_settings()
+	
 	if read_cache():
 		for song in songs.values():
 			add_song(song)
 	else:
-		scan_library()
+		scan_directory(library_path)
 
 
 func _physics_process(_delta: float) -> void:
@@ -55,35 +70,26 @@ func _physics_process(_delta: float) -> void:
 			var item: TreeItem
 			
 			if p:
-				item = library.get_selected().get_prev_visible(true)
+				item = library.get_selected().get_prev_visible()
+				
+				if !item:
+					item = library.get_root()
+					
+					while item.get_child_count() > 0:
+						item = item.get_child(item.get_child_count() - 1)
 			
 			if n:
-				item = library.get_selected().get_next_visible(true)
-			
-			if library.get_root().get_child_count() > 0 && !item:
-				item = library.get_root().get_child(library.get_root().get_child_count() - 1)
+				item = library.get_selected().get_next_visible()
+				
+				if !item:
+					item = library.get_root().get_first_child()
 			
 			item.select(0)
+
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
 		prints("EXIT")
-
-
-func save_cache() -> void:
-	FileAccess.open(CACHE_FILE, FileAccess.WRITE).store_string(JSON.stringify({
-		"songs": serialize_songs()
-	}, "\t"))
-
-
-func input(event: StringName, d := 300000) -> bool:
-	var t := Time.get_ticks_usec()
-	
-	if Input.is_action_just_pressed(event, true):
-		inputs[event] = t
-		return true
-	else:
-		return Input.is_action_pressed(event, true) && t - inputs[event] > d
 
 
 func read_cache() -> bool:
@@ -94,30 +100,33 @@ func read_cache() -> bool:
 			var json = JSON.parse_string(file.get_as_text())
 			
 			if json:
-				var songs_dict: Dictionary = json["songs"]
+				var songs_dict: Dictionary = json.songs
 				
 				for path in songs_dict:
 					var song := Song.new()
 					var song_dict: Dictionary = songs_dict[path]
 					
 					song.path = path
-					song.title = song_dict["title"]
-					song.artist = song_dict["artist"]
-					song.album = song_dict["album"]
-					song.lyrics = song_dict["lyrics"].c_unescape()
+					song.title = song_dict.title
+					song.artist = song_dict.artist
+					song.album = song_dict.album
+					song.lyrics = song_dict.lyrics.c_unescape()
+					song.duration = song_dict.duration
 					
 					songs[path] = song
+				
+				library_path = json.path
 				
 				return true
 	
 	return false
 
-func scan_library() -> void:
-	opendir(
-		"/home/wilson/Music"
-		#"Z:/home/wilson/Music"
-		#"C:/Users/Admin/Music"
-	)
+
+func save_cache() -> void:
+	FileAccess.open(CACHE_FILE, FileAccess.WRITE).store_string(JSON.stringify({
+		songs = serialize_songs(),
+		path = library_path,
+	}, "\t"))
 
 
 func serialize_songs() -> Dictionary:
@@ -127,16 +136,17 @@ func serialize_songs() -> Dictionary:
 		var song := songs[path] as Song
 		
 		dict[path] = {
-			"title": song.title,
-			"artist": song.artist,
-			"album": song.album,
-			"lyrics": song.lyrics.c_escape(),
+			title = song.title,
+			artist = song.artist,
+			album = song.album,
+			lyrics = song.lyrics.c_escape(),
+			duration = song.duration,
 		}
 	
 	return dict
 
 
-func opendir(path: String) -> void:
+func scan_directory(path: String) -> void:
 	var dir := DirAccess.open(path)
 	
 	if dir:
@@ -144,11 +154,22 @@ func opendir(path: String) -> void:
 		var dirs := dir.get_directories()
 		
 		for file in files:
-			if file.ends_with(".mp3"):
-				prints("READTAG", path.path_join(file))
+			match file.get_extension():
+				"mp3":
+					prints("READTAG", path.path_join(file))
 		
 		for directory in dirs:
-			opendir(path.path_join(directory))
+			scan_directory(path.path_join(directory))
+
+
+func input(event: StringName, d := 300000) -> bool:
+	var t := Time.get_ticks_usec()
+	
+	if Input.is_action_just_pressed(event, true):
+		inputs[event] = t
+		return true
+	else:
+		return Input.is_action_pressed(event, true) && t - inputs[event] > d
 
 
 func reparent_item(item: TreeItem, parent: TreeItem) -> void:
@@ -218,11 +239,11 @@ func add_song(song: Song) -> void:
 	reparent_item(item, get_album(get_artist(song.artist), song.album))
 
 
-func read_tag(string: String) -> void:
+func read_tags(string: String) -> void:
 	var mode := TagMode.NONE
 	var song := Song.new()
 	
-	for section in string.split(DELIMETER):
+	for section in string.split(Stdin.DELIMETER):
 		if mode == TagMode.NONE:
 			match section:
 				"TAGOF":
@@ -239,6 +260,9 @@ func read_tag(string: String) -> void:
 				
 				"Lyrics":
 					mode = TagMode.LYRICS
+				
+				"Duration":
+					mode = TagMode.DURATION
 		else:
 			match mode:
 				TagMode.PATH:
@@ -256,12 +280,14 @@ func read_tag(string: String) -> void:
 				
 				TagMode.LYRICS:
 					song.lyrics = section
+				
+				TagMode.DURATION:
+					song.duration = int(section)
 			
 			mode = TagMode.NONE
 	
-	song_items[song.path].set_meta(&"songres", song)
-	
 	add_song(song)
+
 
 func command(string: String) -> void:
 	if string == "EXIT":
@@ -269,10 +295,10 @@ func command(string: String) -> void:
 		get_tree().quit()
 	
 	if string.begins_with("TAGOF"):
-		read_tag(string)
+		read_tags(string)
 	
 	if string.begins_with("VOLUME"):
-		var volume := string.split(DELIMETER)[1]
+		var volume := string.split(Stdin.DELIMETER)[1]
 		
 		%VolumeLabel.text = volume + "%"
 		%Volume.value = 100 - int(volume)
@@ -284,9 +310,67 @@ func _on_library_item_activated() -> void:
 	
 	if song:
 		prints("PLAY", song.path)
+		
+		%Title.text = song.title
+		%Artist.text = song.artist
+		%Album.text = song.album
+		%Lyrics.text = song.lyrics
+		%PlayPauseResume.text = PAUSE_SYMBOL
 	else:
 		item.collapsed = !item.collapsed
 
 
 func _on_library_item_selected() -> void:
 	library.scroll_to_item(library.get_selected())
+
+
+func init_settings() -> void:
+	var settings := $SettingsPanel/Panel/Settings as Tree
+	var root := settings.create_item()
+	
+	settings_library_path = root.create_child()
+	settings_library_path.set_text(0, "Music library path")
+	settings_library_path.set_editable(1, true)
+	settings_library_path.set_selectable(0, false)
+	settings_library_path.add_button(0, preload("res://src/small-icon.svg"))
+	settings_library_path.add_button(1, preload("res://src/small-icon.svg"))
+
+
+func _on_settings_pressed() -> void:
+	settings_library_path.set_text(1, library_path)
+	
+	$SettingsPanel.visible = true
+
+
+func _on_settings_button_clicked(item: TreeItem, column: int, _id: int, _mouse_button_index: int) -> void:
+	match item:
+		settings_library_path:
+			if column == 0:
+				library_path = default_library_path
+			else:
+				$SettingsPanel/LibraryPathSelector.popup_centered()
+
+
+func _on_library_path_selector_dir_selected(dir: String) -> void:
+	library_path = dir
+
+
+func _on_settings_panel_close_requested() -> void:
+	$SettingsPanel.visible = false
+
+
+func _on_reload_library_pressed() -> void:
+	song_items.clear()
+	artists.clear()
+	songs.clear()
+	library.clear()
+	library.create_item()
+	scan_directory(library_path)
+
+
+func _on_play_pause_resume_pressed() -> void:
+	is_pausing = not is_pausing
+	
+	print("PAUSE" if is_pausing else "RESUME")
+	
+	%PlayPauseResume.text = PLAY_SYMBOL if is_pausing else PAUSE_SYMBOL

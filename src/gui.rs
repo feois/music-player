@@ -1,18 +1,16 @@
 use std::{io::{BufRead, BufReader, Write}, process::{Child, ChildStdin, Command, Stdio}, sync::mpsc::{channel, Receiver}, thread};
 
 
+pub const DELIMETER: &str = "::::";
+pub const ENDLINE: &str = ";;;;";
+
+
 pub struct GUI<const BUFFER_SIZE: usize = 1024> {
     process: Child,
     stdin: ChildStdin,
     receiver: Receiver<String>,
     buffer: String,
 }
-
-#[cfg(target_os = "windows")]
-const NEWLINE: usize = 2;
-
-#[cfg(not(target_os = "windows"))]
-const NEWLINE: usize = 1;
 
 impl<const BUFFER_SIZE: usize> GUI<BUFFER_SIZE> {
     #[inline(always)]
@@ -25,8 +23,6 @@ impl<const BUFFER_SIZE: usize> GUI<BUFFER_SIZE> {
         let stdin = process.stdin.take().unwrap();
         let stdout = process.stdout.take().unwrap();
         
-        println!("TASK: Opening GUI");
-        
         let (sender, receiver) = channel();
         
         thread::spawn(move || {
@@ -37,7 +33,7 @@ impl<const BUFFER_SIZE: usize> GUI<BUFFER_SIZE> {
                 match bufreader.read_until(b'\n', &mut buffer) {
                     Ok(0) => break,
                     Ok(n) => {
-                        if n >= NEWLINE && sender.send(String::from_utf8(buffer[..n - NEWLINE].to_vec()).expect("Invalid string")).is_err() {
+                        if sender.send(String::from_utf8(buffer[..n - 1].to_vec()).expect("Invalid string")).is_err() {
                             break;
                         }
                     }
@@ -53,7 +49,7 @@ impl<const BUFFER_SIZE: usize> GUI<BUFFER_SIZE> {
     
     #[inline(always)]
     pub fn finished(&mut self) -> bool {
-        self.process.try_wait().expect("Failed to wait").is_some()
+        self.process.try_wait().expect("Failed to wait").inspect(|status| println!("GODOT-STATUS: {}", status)).is_some()
     }
     
     #[inline(always)]
@@ -63,12 +59,11 @@ impl<const BUFFER_SIZE: usize> GUI<BUFFER_SIZE> {
     
     #[inline(always)]
     pub fn endline(&mut self) {
-        let mut s = self.buffer.replace("\n", "\\n");
-        
-        s += "\n";
+        self.buffer += ENDLINE;
+        self.buffer += "\n";
         
         if !self.finished() {
-            self.stdin.write_all(s.as_bytes()).expect("Failed to write stdin");
+            self.stdin.write_all(self.buffer.as_bytes()).expect("Failed to write stdin");
         }
         
         self.buffer.clear();
@@ -87,6 +82,7 @@ impl<const BUFFER_SIZE: usize> GUI<BUFFER_SIZE> {
     
     #[inline(always)]
     pub fn close(mut self) {
+        println!("TASK: Closing GUI");
         self.write_line("EXIT");
         self.process.wait().unwrap();
     }

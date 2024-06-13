@@ -110,7 +110,7 @@ impl EventListener {
     pub fn listen() -> Self {
         let (s, r) = channel();
         
-        thread::spawn(move || rdev::listen(move |e| { s.send(e).expect("Listener dropped"); }).expect("Failed to listen"));
+        thread::spawn(|| rdev::listen(move |e| { s.send(e).err().map(|e| println!("ERROR: Listener dropped {}", e)); }).expect("Failed to listen"));
         
         Self {
             receiver: r,

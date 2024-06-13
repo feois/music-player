@@ -15,9 +15,6 @@ use id3::{Tag, TagLike};
 use xosd_rs::Xosd;
 
 
-const DELIMETER: &str = "::::";
-
-
 pub trait BooleanConditional {
     fn ifdo(self, f: impl FnOnce()) -> Self;
     fn elsedo(self, f: impl FnOnce()) -> Self;
@@ -54,14 +51,16 @@ fn read_tags(gui: &mut GUI, path: &str) {
     match Tag::read_from_path(path) {
         Ok(tag) => {
             let lyrics = tag.lyrics().find(|lyrics| lyrics.lang == "eng").map_or("None", |lyrics| &lyrics.text);
+            let duration = mp3_duration::from_path(path).expect("Failed to read duration").as_secs();
             
             println!("TASK: Reading tag of {}", path);
             
             write_tags(gui, "TAGOF", path);
             write_tags(gui, "Title", tag.title().unwrap_or("No Title"));
             write_tags(gui, "Album", tag.album().unwrap_or("No Album"));
-            write_tags(gui, "Artist", &tag.artists().unwrap_or(vec![]).join(", "));
+            write_tags(gui, "Artist", &tag.artists().map_or("No Artist".to_string(), |artists| artists.join(", ")));
             write_tags(gui, "Lyrics", lyrics);
+            write_tags(gui, "Duration", &duration.to_string());
             gui.endline();
         }
         Err(e) => println!("ERROR: Cannot read tag from {} ({})", path, e)
@@ -88,12 +87,9 @@ fn launch_gui(gui: &mut Option<GUI>) {
     dir.pop();
     dir.push("godot");
     
+    println!("TASK: Launching GUI");
+        
     gui.replace(GUI::launch(dir.as_os_str().to_str().unwrap())).map(GUI::close);
-}
-
-#[inline(always)]
-fn kill_gui(gui: &mut Option<GUI>) {
-    gui.take().map(GUI::close);
 }
 
 fn main() {
@@ -170,25 +166,28 @@ fn main() {
                     launch_gui(&mut gui);
                 }
                 else {
-                    kill_gui(&mut gui);
+                    gui.take().map(GUI::close);
                 }
             }
             
             if comb == quit_app {
-                kill_gui(&mut gui);
+                gui.take().map(GUI::close);
                 break 'event_loop;
             }
             
             if comb == pause_resume_song {
                 if player.is_paused() {
+                    gui.as_mut().map(|gui| gui.write("RESUME"));
                     player.resume();
                 }
                 else {
+                    gui.as_mut().map(|gui| gui.write("PAUSE"));
                     player.pause();
                 }
             }
             
             if comb == stop_player {
+                gui.as_mut().map(|gui| gui.write("STOP"));
                 player.stop();
             }
             

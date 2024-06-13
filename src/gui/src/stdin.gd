@@ -1,5 +1,8 @@
 extends Node
 
+const DELIMETER := "::::"
+const ENDLINE := ";;;;"
+
 @warning_ignore("unused_signal")
 signal command(string: String)
 
@@ -12,10 +15,16 @@ func _ready() -> void:
 		func ():
 			var s := ""
 			
-			while s != "EXIT":
-				s = OS.read_string_from_stdin()
-				s = s.c_unescape()
-				s = s.substr(0, s.length() - 1)
+			while true:
+				s += OS.read_string_from_stdin()
 				
-				call_thread_safe(&"emit_signal", &"command", s)
+				if s.ends_with(ENDLINE + "\n"):
+					s = s.substr(0, s.length() - ENDLINE.length() - 1)
+					
+					call_thread_safe(&"emit_signal", &"command", s)
+					
+					if s == "EXIT":
+						break
+					
+					s = ""
 	)

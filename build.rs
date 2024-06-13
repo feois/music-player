@@ -4,6 +4,7 @@ use std::{env, path::PathBuf, process::Command, str::FromStr};
 fn main() {
     println!("cargo::rerun-if-changed=src/gui/src");
     println!("cargo::rerun-if-changed=src/gui/project.godot");
+    println!("cargo::rerun-if-changed=src/gui/export_presets.cfg");
     
     let mut path = PathBuf::from_str(&env::var("OUT_DIR").unwrap()).unwrap();
     
