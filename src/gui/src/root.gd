@@ -85,6 +85,10 @@ func _physics_process(_delta: float) -> void:
 					item = library.get_root().get_first_child()
 			
 			item.select(0)
+	
+	%Title.get_parent_control().custom_minimum_size.y = %Title.size.y
+	%Repeat.custom_minimum_size.x = %ControlBar.size.y
+	%Shuffle.custom_minimum_size.x = %ControlBar.size.y
 
 
 func _notification(what: int) -> void:
@@ -312,9 +316,10 @@ func _on_library_item_activated() -> void:
 		prints("PLAY", song.path)
 		
 		%Title.text = song.title
-		%Artist.text = song.artist
-		%Album.text = song.album
-		%Lyrics.text = song.lyrics
+		%Artist.text = "" if song.artist == "No Artist" else song.artist
+		%TitleArtistConnector.visible = not %Artist.text.is_empty()
+		%Album.text = "" if song.album == "No Album" else song.album
+		%Lyrics.text = "" if song.lyrics == "No Lyrics" else song.lyrics
 		%PlayPauseResume.text = PAUSE_SYMBOL
 	else:
 		item.collapsed = !item.collapsed

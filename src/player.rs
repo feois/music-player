@@ -3,11 +3,39 @@ use std::{fs::File, io::BufReader};
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
 
 
+pub enum RepeatMode {
+    NoRepeat,
+    Repeat,
+    RepeatTrack,
+}
+
+impl RepeatMode {
+    #[inline(always)]
+    pub fn to_string(&self) -> &str {
+        match self {
+            Self::NoRepeat => "none",
+            Self::Repeat => "all",
+            Self::RepeatTrack => "one",
+        }
+    }
+    
+    #[inline(always)]
+    pub fn from_string(str: &str) -> Option<Self> {
+        match str {
+            "none" => Some(Self::NoRepeat),
+            "all" => Some(Self::Repeat),
+            "one" => Some(Self::RepeatTrack),
+            _ => None,
+        }
+    }
+}
+
 pub struct Player {
     #[allow(dead_code)]
     stream: OutputStream,
     handle: OutputStreamHandle,
     sink: Option<Sink>,
+    pub repeat_mode: RepeatMode, 
 }
 
 impl Player {
@@ -19,6 +47,7 @@ impl Player {
             stream,
             handle,
             sink: None,
+            repeat_mode: RepeatMode::NoRepeat,
         }
     }
     
@@ -62,5 +91,16 @@ impl Player {
         if let Some(sink) = &self.sink {
             sink.set_volume(amp);
         }
+    }
+    
+    #[inline(always)]
+    pub fn toggle_repeat_mode(&mut self) -> &RepeatMode {
+        self.repeat_mode = match self.repeat_mode {
+            RepeatMode::NoRepeat => RepeatMode::Repeat,
+            RepeatMode::Repeat => RepeatMode::RepeatTrack,
+            RepeatMode::RepeatTrack => RepeatMode::NoRepeat,
+        };
+        
+        &self.repeat_mode
     }
 }

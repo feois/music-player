@@ -1,4 +1,4 @@
-use std::{io::{BufRead, BufReader, Write}, process::{Child, ChildStdin, Command, Stdio}, sync::mpsc::{channel, Receiver}, thread};
+use std::{io::{BufRead, BufReader, Write}, process::{Child, ChildStdin, Command, Stdio}, sync::mpsc::{channel, Receiver}, thread, time::Duration};
 
 
 pub const DELIMETER: &str = "::::";
@@ -83,7 +83,17 @@ impl<const BUFFER_SIZE: usize> GUI<BUFFER_SIZE> {
     #[inline(always)]
     pub fn close(mut self) {
         println!("TASK: Closing GUI");
-        self.write_line("EXIT");
-        self.process.wait().unwrap();
+        
+        thread::spawn(move || {
+            for i in 0..5 {
+                self.write_line("EXIT");
+                
+                spin_sleep::sleep(Duration::from_secs(1));
+                
+                if self.finished() {
+                    break;
+                }
+            }
+        });
     }
 }

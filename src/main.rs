@@ -50,7 +50,7 @@ fn write_tags(gui: &mut GUI, tag: &str, content: &str) {
 fn read_tags(gui: &mut GUI, path: &str) {
     match Tag::read_from_path(path) {
         Ok(tag) => {
-            let lyrics = tag.lyrics().find(|lyrics| lyrics.lang == "eng").map_or("None", |lyrics| &lyrics.text);
+            let lyrics = tag.lyrics().find(|lyrics| lyrics.lang == "eng").map_or("No Lyrics", |lyrics| &lyrics.text);
             let duration = mp3_duration::from_path(path).expect("Failed to read duration").as_secs();
             
             println!("TASK: Reading tag of {}", path);
