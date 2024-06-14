@@ -15,7 +15,6 @@ enum TagMode {
 	ALBUM,
 	ARTIST,
 	LYRICS,
-	DURATION,
 }
 
 class Song extends RefCounted:
@@ -24,7 +23,6 @@ class Song extends RefCounted:
 	var artist: String
 	var album: String
 	var lyrics: String
-	var duration: int
 
 
 var songs := {}
@@ -33,7 +31,21 @@ var song_items := {}
 var uninitalized_songs := {}
 var inputs := {}
 
+var is_playing := false
 var is_pausing := false
+var song_duration := 0:
+	set(value):
+		song_duration = value
+		
+		if is_node_ready():
+			%SongProgress.max_value = value
+var song_position := 0.0:
+	set(value):
+		song_position = value
+		
+		if is_node_ready() and song_duration != 0:
+			%SongProgress.value = value
+			%SongProgress/TextureRect.position.x = %SongProgress.size.x * value / song_duration
 
 var settings_library_path: TreeItem
 
@@ -60,9 +72,11 @@ func _ready() -> void:
 			add_song(song)
 	else:
 		scan_directory(library_path)
+	
+	%SongProgress.modulate = Color(0, 0, 0, 0)
 
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	var selected := library.get_selected()
 	
 	if selected && library.has_focus():
@@ -97,6 +111,11 @@ func _physics_process(_delta: float) -> void:
 	
 	%Repeat.custom_minimum_size.x = %ControlBar.size.y
 	%Shuffle.custom_minimum_size.x = %ControlBar.size.y
+	
+	%SongProgress.modulate = Color(1, 1, 1, 1) if is_playing and song_duration > 0 else Color(0, 0, 0, 0)
+	
+	if is_playing and not is_pausing:
+		song_position += delta
 
 
 func _notification(what: int) -> void:
@@ -123,7 +142,6 @@ func read_cache() -> bool:
 					song.artist = song_dict.artist
 					song.album = song_dict.album
 					song.lyrics = song_dict.lyrics.c_unescape()
-					song.duration = song_dict.duration
 					
 					songs[path] = song
 				
@@ -152,7 +170,6 @@ func serialize_songs() -> Dictionary:
 			artist = song.artist,
 			album = song.album,
 			lyrics = song.lyrics.c_escape(),
-			duration = song.duration,
 		}
 	
 	return dict
@@ -272,9 +289,6 @@ func read_tags(args: PackedStringArray) -> void:
 				
 				"Lyrics":
 					mode = TagMode.LYRICS
-				
-				"Duration":
-					mode = TagMode.DURATION
 		else:
 			match mode:
 				TagMode.PATH:
@@ -292,9 +306,6 @@ func read_tags(args: PackedStringArray) -> void:
 				
 				TagMode.LYRICS:
 					song.lyrics = section
-				
-				TagMode.DURATION:
-					song.duration = int(section)
 			
 			mode = TagMode.NONE
 	
@@ -316,6 +327,9 @@ func command(string: String) -> void:
 			%VolumeLabel.text = args[1] + "%"
 			%Volume.value = 100 - int(args[1])
 		
+		"DURATION":
+			song_duration = int(args[1])
+		
 		"REPEAT":
 			match args[1]:
 				"none":
@@ -335,6 +349,28 @@ func command(string: String) -> void:
 		
 		"NO_SHUFFLE":
 			%Shuffle.icon = NO_SHUFFLE
+		
+		"RESUME":
+			%PlayPauseResume.text = PAUSE_SYMBOL
+			is_pausing = false
+		
+		"PAUSE":
+			%PlayPauseResume.text = PLAY_SYMBOL
+			is_pausing = true
+
+
+func play_song(song: Song) -> void:
+	prints("PLAY", song.path)
+	
+	%Title.text = song.title
+	%Artist.text = "" if song.artist == "No Artist" else song.artist
+	%TitleArtistConnector.visible = not %Artist.text.is_empty()
+	%Album.text = "" if song.album == "No Album" else song.album
+	%Lyrics.text = "" if song.lyrics == "No Lyrics" else song.lyrics
+	%PlayPauseResume.text = PAUSE_SYMBOL
+	
+	is_playing = true
+	song_position = 0.0
 
 
 func _on_library_item_activated() -> void:
@@ -342,14 +378,7 @@ func _on_library_item_activated() -> void:
 	var song := get_song(item)
 	
 	if song:
-		prints("PLAY", song.path)
-		
-		%Title.text = song.title
-		%Artist.text = "" if song.artist == "No Artist" else song.artist
-		%TitleArtistConnector.visible = not %Artist.text.is_empty()
-		%Album.text = "" if song.album == "No Album" else song.album
-		%Lyrics.text = "" if song.lyrics == "No Lyrics" else song.lyrics
-		%PlayPauseResume.text = PAUSE_SYMBOL
+		play_song(song)
 	else:
 		item.collapsed = !item.collapsed
 

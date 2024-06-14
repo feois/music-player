@@ -6,10 +6,12 @@ edition = "2021"
 [dependencies]
 dirs = "5.0.1"
 id3 = "1.13.1"
-mp3-duration = "0.1.10"
 rdev = "0.5.3"
-rodio = { version = "0.18.1", features = ["minimp3"], default-features = false }
 spin_sleep = "1.2.0"
+playback-rs = "0.4.4"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 xosd-rs = "0.2.0"
+
+[patch.crates-io]
+playback-rs = { git = "https://github.com/feois/playback-rs-fork.git" }

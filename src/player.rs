@@ -1,6 +1,6 @@
-use std::{fs::File, io::BufReader};
+use std::time::Duration;
 
-use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
+use playback_rs::Song;
 
 
 pub enum RepeatMode {
@@ -21,10 +21,7 @@ impl RepeatMode {
 }
 
 pub struct Player {
-    #[allow(dead_code)]
-    stream: OutputStream,
-    handle: OutputStreamHandle,
-    sink: Option<Sink>,
+    player: playback_rs::Player,
     pub volume: f32,
     pub repeat_mode: RepeatMode,
     pub shuffle: bool,
@@ -33,12 +30,8 @@ pub struct Player {
 impl Player {
     #[inline(always)]
     pub fn new() -> Self {
-        let (stream, handle) = OutputStream::try_default().expect("Failed to output audio");
-        
         Self {
-            stream,
-            handle,
-            sink: None,
+            player: playback_rs::Player::new(None).expect("Failed to initialize player"),
             volume: 1.,
             repeat_mode: RepeatMode::NoRepeat,
             shuffle: false,
@@ -47,45 +40,45 @@ impl Player {
     
     #[inline(always)]
     pub fn play(&mut self, filepath: &str) {
-        let file = BufReader::new(File::open(filepath).expect("Failed to open file"));
-        let source = Decoder::new(file).unwrap();
-        let sink = Sink::try_new(&self.handle).expect("Failed to create sink");
-        
-        sink.append(source);
-        sink.set_volume(self.volume);
-        
-        self.sink.replace(sink);
+        match Song::from_file(filepath, None) {
+            Ok(song) => self.player.play_song_now(&song, None).inspect_err(|e| println!("Failed to play song {} {:?}", filepath, e)).unwrap_or(()),
+            Err(e) => println!("Failed to load song {} {:?}", filepath, e),
+        }
     }
     
     #[inline(always)]
     pub fn stop(&mut self) {
-        self.sink.take();
+        self.player.stop();
     }
     
     #[inline(always)]
     pub fn pause(&self) {
-        if let Some(sink) = &self.sink {
-            sink.pause();
-        }
+        self.player.set_playing(false);
     }
     
     #[inline(always)]
     pub fn resume(&self) {
-        if let Some(sink) = &self.sink {
-            sink.play();
-        }
+        self.player.set_playing(true);
     }
     
     #[inline(always)]
-    pub fn is_paused(&self) -> bool {
-        self.sink.as_ref().is_some_and(|s| s.is_paused())
+    pub fn is_playing(&self) -> bool {
+        self.player.is_playing()
+    }
+    
+    #[inline(always)]
+    pub fn get_position(&self) -> Duration {
+        self.player.get_playback_position().unwrap_or((Duration::ZERO, Duration::ZERO)).0
+    }
+    
+    #[inline(always)]
+    pub fn get_length(&self) -> Duration {
+        self.player.get_playback_position().unwrap_or((Duration::ZERO, Duration::ZERO)).1
     }
     
     #[inline(always)]
     pub fn update_volume(&self) {
-        if let Some(sink) = &self.sink {
-            sink.set_volume(self.volume);
-        }
+        self.player.set_volume(self.volume)
     }
     
     #[inline(always)]

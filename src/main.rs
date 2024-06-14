@@ -57,6 +57,8 @@ struct App {
     volume_decrease: Option<usize>,
     toggle_repeat_mode: Option<usize>,
     toggle_shuffling: Option<usize>,
+    
+    request_duration: bool,
 }
 
 
@@ -67,7 +69,7 @@ impl App {
             player: Player::new(),
             listener: EventListener::listen(),
             
-            fps: 60.,
+            fps: 120.,
             delta: Duration::ZERO,
             volume_step: 0.05,
             key_duration: Duration::from_millis(100),
@@ -80,6 +82,8 @@ impl App {
             volume_decrease: None,
             toggle_repeat_mode: None,
             toggle_shuffling: None,
+            
+            request_duration: false,
         };
         
         app.delta = Duration::from_secs_f64(1. / app.fps);
@@ -116,13 +120,18 @@ impl App {
     fn gui_events(&mut self) {
         let mut close = false;
         
+        if self.request_duration && self.player.get_length() != Duration::ZERO {
+            ["DURATION", &self.player.get_length().as_secs().to_string()].gui_write_if(self);
+            self.request_duration = false;
+        }
+        
         while let Some(command) = self.gui.as_ref().and_then(GUI::read) {
             let split = command.bytes().position(|b| b == b' ').unwrap_or(command.len());
             let args = if split == command.len() { "" } else { &command[split + 1..] };
             
             match &command[..split] {
                 "READTAG" => self.read_tags(args),
-                "PLAY" => self.player.play(args),
+                "PLAY" => { self.player.play(args); self.request_duration = true },
                 "STOP" => self.player.stop(),
                 "PAUSE" => self.player.pause(),
                 "RESUME" => self.player.resume(),
@@ -162,13 +171,13 @@ impl App {
             }
             
             if comb == self.pause_resume_song {
-                if self.player.is_paused() {
-                    ["RESUME"].gui_write_if(self);
-                    self.player.resume();
-                }
-                else {
+                if self.player.is_playing() {
                     ["PAUSE"].gui_write_if(self);
                     self.player.pause();
+                }
+                else {
+                    ["RESUME"].gui_write_if(self);
+                    self.player.resume();
                 }
             }
             
@@ -241,7 +250,6 @@ impl App {
                     "Album", tag.album().unwrap_or("No Album"),
                     "Artist", &tag.artists().map_or("No Artist".to_string(), |artists| artists.join(", ")),
                     "Lyrics", tag.lyrics().find(|lyrics| lyrics.lang == "eng").map_or("No Lyrics", |lyrics| &lyrics.text),
-                    "Duration", &mp3_duration::from_path(path).expect("Failed to read duration").as_secs().to_string(),
                 ]);
             }
             Err(e) => println!("ERROR: Cannot read tag from {} ({})", path, e)
