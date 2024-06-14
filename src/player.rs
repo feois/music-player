@@ -11,21 +11,11 @@ pub enum RepeatMode {
 
 impl RepeatMode {
     #[inline(always)]
-    pub fn to_string(&self) -> &str {
+    pub fn to_str(&self) -> &'static str {
         match self {
             Self::NoRepeat => "none",
             Self::Repeat => "all",
             Self::RepeatTrack => "one",
-        }
-    }
-    
-    #[inline(always)]
-    pub fn from_string(str: &str) -> Option<Self> {
-        match str {
-            "none" => Some(Self::NoRepeat),
-            "all" => Some(Self::Repeat),
-            "one" => Some(Self::RepeatTrack),
-            _ => None,
         }
     }
 }
@@ -35,7 +25,9 @@ pub struct Player {
     stream: OutputStream,
     handle: OutputStreamHandle,
     sink: Option<Sink>,
-    pub repeat_mode: RepeatMode, 
+    pub volume: f32,
+    pub repeat_mode: RepeatMode,
+    pub shuffle: bool,
 }
 
 impl Player {
@@ -47,7 +39,9 @@ impl Player {
             stream,
             handle,
             sink: None,
+            volume: 1.,
             repeat_mode: RepeatMode::NoRepeat,
+            shuffle: false,
         }
     }
     
@@ -58,6 +52,7 @@ impl Player {
         let sink = Sink::try_new(&self.handle).expect("Failed to create sink");
         
         sink.append(source);
+        sink.set_volume(self.volume);
         
         self.sink.replace(sink);
     }
@@ -87,9 +82,9 @@ impl Player {
     }
     
     #[inline(always)]
-    pub fn volume(&self, amp: f32) {
+    pub fn update_volume(&self) {
         if let Some(sink) = &self.sink {
-            sink.set_volume(amp);
+            sink.set_volume(self.volume);
         }
     }
     

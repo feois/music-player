@@ -1,4 +1,4 @@
-use std::{io::{BufRead, BufReader, Write}, process::{Child, ChildStdin, Command, Stdio}, sync::mpsc::{channel, Receiver}, thread, time::Duration};
+use std::{ffi::OsStr, io::{BufRead, BufReader, Write}, process::{Child, ChildStdin, Command, Stdio}, sync::mpsc::{channel, Receiver}, thread, time::Duration};
 
 
 pub const DELIMETER: &str = "::::";
@@ -14,7 +14,7 @@ pub struct GUI<const BUFFER_SIZE: usize = 1024> {
 
 impl<const BUFFER_SIZE: usize> GUI<BUFFER_SIZE> {
     #[inline(always)]
-    pub fn launch(path: &str) -> Self {
+    pub fn launch(path: &OsStr) -> Self {
         let mut process = Command::new(path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -70,6 +70,26 @@ impl<const BUFFER_SIZE: usize> GUI<BUFFER_SIZE> {
     }
     
     #[inline(always)]
+    pub fn write_delimeter(&mut self, string: &str) {
+        self.write(string);
+        self.write(DELIMETER);
+    }
+    
+    #[inline(always)]
+    pub fn write_iter<T: AsRef<str>>(&mut self, iter: impl IntoIterator<Item = T>) {
+        let mut iter = iter.into_iter();
+        
+        if let Some(mut s) = iter.next() {
+            for t in iter {
+                self.write_delimeter(s.as_ref());
+                s = t;
+            }
+            
+            self.write_line(s.as_ref());
+        }
+    }
+    
+    #[inline(always)]
     pub fn write_line(&mut self, string: &str) {
         self.write(string);
         self.endline();
@@ -82,18 +102,49 @@ impl<const BUFFER_SIZE: usize> GUI<BUFFER_SIZE> {
     
     #[inline(always)]
     pub fn close(mut self) {
-        println!("TASK: Closing GUI");
-        
-        thread::spawn(move || {
-            for i in 0..5 {
-                self.write_line("EXIT");
+        if !self.finished() {
+            println!("TASK: Closing GUI");
+            
+            self.write_line("EXIT");
+            
+            spin_sleep::sleep(Duration::from_millis(500));
+            
+            if !self.finished() {
+                println!("ERROR: Failed to close GUI");
                 
-                spin_sleep::sleep(Duration::from_secs(1));
-                
-                if self.finished() {
-                    break;
-                }
+                thread::spawn(move || {
+                    for i in 0..3 {
+                        self.write_line("EXIT");
+                        
+                        spin_sleep::sleep(Duration::from_secs(1));
+                        
+                        if self.finished() {
+                            return;
+                        }
+                        
+                        println!("ERROR: Failed to close GUI, try {}", i + 1);
+                    }
+                    
+                    println!("TASK: Killing GUI");
+                    
+                    self.process.kill().expect("Failed to kill");
+                });
             }
-        });
+        }
+    }
+}
+
+pub trait GUIWrite {
+    fn gui_write(self, gui: &mut impl AsMut<GUI>);
+    fn gui_write_if(self, gui: &mut impl AsMut<Option<GUI>>);
+}
+
+impl<T: AsRef<str>, U: IntoIterator<Item = T>> GUIWrite for U {
+    fn gui_write(self, gui: &mut impl AsMut<GUI>) {
+        gui.as_mut().write_iter(self);
+    }
+    
+    fn gui_write_if(self, gui: &mut impl AsMut<Option<GUI>>) {
+        gui.as_mut().as_mut().map(|gui| gui.write_iter(self));
     }
 }

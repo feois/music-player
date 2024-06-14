@@ -143,86 +143,87 @@ allow_rmb_select = true
 allow_search = false
 hide_root = true
 
-[node name="VBoxContainer" type="VSplitContainer" parent="HBoxContainer/HSplitContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/HSplitContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
+theme_override_constants/separation = 8
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
+[node name="VSplitContainer" type="VSplitContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="TestPrint" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="Player" type="VBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
+[node name="Playlists" type="VBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 4
 
-[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player"]
+[node name="TestPrint" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Player" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/HBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Details" type="ScrollContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/HBoxContainer/VBoxContainer"]
+[node name="Details" type="ScrollContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 vertical_scroll_mode = 0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/HBoxContainer/VBoxContainer/Details"]
+[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player/VBoxContainer/Details"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Title" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/HBoxContainer/VBoxContainer/Details/HBoxContainer"]
+[node name="Title" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player/VBoxContainer/Details/HBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Title"
 text = "test"
 max_lines_visible = 1
 
-[node name="TitleArtistConnector" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/HBoxContainer/VBoxContainer/Details/HBoxContainer"]
+[node name="TitleArtistConnector" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player/VBoxContainer/Details/HBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"TitleArtist"
 text = "by"
 
-[node name="Artist" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/HBoxContainer/VBoxContainer/Details/HBoxContainer"]
+[node name="Artist" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player/VBoxContainer/Details/HBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Artist"
 text = "test"
 
-[node name="Album" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/HBoxContainer/VBoxContainer"]
+[node name="Album" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Album"
 text = "test"
 max_lines_visible = 1
 
-[node name="AlbumImage" type="TextureRect" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/HBoxContainer/VBoxContainer"]
+[node name="AlbumImage" type="TextureRect" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 0
+size_flags_vertical = 3
 texture = ExtResource("2_8nwv5")
-stretch_mode = 5
+stretch_mode = 4
 
-[node name="ScrollContainer" type="ScrollContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/HBoxContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player"]
 custom_minimum_size = Vector2(256, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Lyrics" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/HBoxContainer/ScrollContainer"]
+[node name="Lyrics" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player/ScrollContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Lyrics"
 
-[node name="SongProgress" type="ProgressBar" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player"]
+[node name="SongProgress" type="ProgressBar" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
@@ -230,7 +231,7 @@ theme_type_variation = &"SongProgress"
 value = 50.0
 show_percentage = false
 
-[node name="TextureRect" type="TextureRect" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/SongProgress"]
+[node name="TextureRect" type="TextureRect" parent="HBoxContainer/HSplitContainer/VBoxContainer/SongProgress"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -245,19 +246,19 @@ grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("6_h50mn")
 
-[node name="ControlBar" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player"]
+[node name="ControlBar" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 alignment = 1
 
-[node name="Repeat" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar"]
+[node name="Repeat" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"SongControl"
 icon = ExtResource("6_08qgn")
 expand_icon = true
 
-[node name="PreviousSong" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar"]
+[node name="PreviousSong" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
 unique_name_in_owner = true
 layout_mode = 2
 tooltip_text = "Previous Song"
@@ -265,7 +266,7 @@ theme_type_variation = &"SongControl"
 text = "⏴"
 expand_icon = true
 
-[node name="ToBegin" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar"]
+[node name="ToBegin" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
 unique_name_in_owner = true
 layout_mode = 2
 tooltip_text = "Rewind to the beginning"
@@ -273,7 +274,7 @@ theme_type_variation = &"SongControl"
 text = "⏮"
 expand_icon = true
 
-[node name="Rewind" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar"]
+[node name="Rewind" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
 unique_name_in_owner = true
 layout_mode = 2
 tooltip_text = "Rewind"
@@ -281,7 +282,7 @@ theme_type_variation = &"SongControl"
 text = "⏪"
 expand_icon = true
 
-[node name="PlayPauseResume" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar"]
+[node name="PlayPauseResume" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
 unique_name_in_owner = true
 layout_mode = 2
 tooltip_text = "Play / Pause"
@@ -289,7 +290,7 @@ theme_type_variation = &"SongControl"
 text = "⏵"
 expand_icon = true
 
-[node name="FastForward" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar"]
+[node name="FastForward" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
 unique_name_in_owner = true
 layout_mode = 2
 tooltip_text = "Fast Forward"
@@ -297,7 +298,7 @@ theme_type_variation = &"SongControl"
 text = "⏩"
 expand_icon = true
 
-[node name="ToEnd" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar"]
+[node name="ToEnd" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
 unique_name_in_owner = true
 layout_mode = 2
 tooltip_text = "Fast forward to the end"
@@ -305,7 +306,7 @@ theme_type_variation = &"SongControl"
 text = "⏭"
 expand_icon = true
 
-[node name="StopSong" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar"]
+[node name="StopSong" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
 unique_name_in_owner = true
 layout_mode = 2
 tooltip_text = "Stop"
@@ -313,16 +314,15 @@ theme_type_variation = &"SongControl"
 text = "⏹"
 expand_icon = true
 
-[node name="Shuffle" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar"]
+[node name="Shuffle" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
 unique_name_in_owner = true
 layout_mode = 2
-tooltip_text = "bt"
+tooltip_text = "Shuffle"
 theme_type_variation = &"SongControl"
 icon = ExtResource("7_gk0bi")
 expand_icon = true
 
-[node name="Margin" type="Control" parent="HBoxContainer/HSplitContainer/VBoxContainer/Player"]
-custom_minimum_size = Vector2(0, 8)
+[node name="Margin" type="Control" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
 layout_mode = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="HBoxContainer"]
@@ -423,7 +423,9 @@ use_native_dialog = true
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer2/HBoxContainer/ReloadLibrary" to="." method="_on_reload_library_pressed"]
 [connection signal="item_activated" from="HBoxContainer/HSplitContainer/VBoxContainer2/Library" to="." method="_on_library_item_activated"]
 [connection signal="item_selected" from="HBoxContainer/HSplitContainer/VBoxContainer2/Library" to="." method="_on_library_item_selected"]
-[connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/Player/ControlBar/PlayPauseResume" to="." method="_on_play_pause_resume_pressed"]
+[connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/Repeat" to="." method="_on_repeat_pressed"]
+[connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/PlayPauseResume" to="." method="_on_play_pause_resume_pressed"]
+[connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/Shuffle" to="." method="_on_shuffle_pressed"]
 [connection signal="close_requested" from="SettingsPanel" to="." method="_on_settings_panel_close_requested"]
 [connection signal="button_clicked" from="SettingsPanel/Panel/Settings" to="." method="_on_settings_button_clicked"]
 [connection signal="dir_selected" from="SettingsPanel/LibraryPathSelector" to="." method="_on_library_path_selector_dir_selected"]

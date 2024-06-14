@@ -5,6 +5,9 @@ const CACHE_FILE := "user://cache.json"
 const PLAY_SYMBOL := "⏵"
 const PAUSE_SYMBOL := "⏸"
 
+const SHUFFLE := preload("res://src/shuffle.png")
+const NO_SHUFFLE := preload("res://src/no_shuffle.png")
+
 enum TagMode {
 	NONE,
 	PATH,
@@ -86,7 +89,12 @@ func _physics_process(_delta: float) -> void:
 			
 			item.select(0)
 	
-	%Title.get_parent_control().custom_minimum_size.y = %Title.size.y
+	if Input.is_action_just_pressed(&"hide details"):
+		%Player.visible = not %Player.visible
+	
+	if Input.is_action_just_pressed(&"hide playlists"):
+		%Playlists.visible = not %Playlists.visible
+	
 	%Repeat.custom_minimum_size.x = %ControlBar.size.y
 	%Shuffle.custom_minimum_size.x = %ControlBar.size.y
 
@@ -243,11 +251,11 @@ func add_song(song: Song) -> void:
 	reparent_item(item, get_album(get_artist(song.artist), song.album))
 
 
-func read_tags(string: String) -> void:
+func read_tags(args: PackedStringArray) -> void:
 	var mode := TagMode.NONE
 	var song := Song.new()
 	
-	for section in string.split(Stdin.DELIMETER):
+	for section in args:
 		if mode == TagMode.NONE:
 			match section:
 				"TAGOF":
@@ -294,18 +302,39 @@ func read_tags(string: String) -> void:
 
 
 func command(string: String) -> void:
-	if string == "EXIT":
-		save_cache()
-		get_tree().quit()
+	var args := string.split(Stdin.DELIMETER)
 	
-	if string.begins_with("TAGOF"):
-		read_tags(string)
-	
-	if string.begins_with("VOLUME"):
-		var volume := string.split(Stdin.DELIMETER)[1]
+	match args[0]:
+		"EXIT":
+			save_cache()
+			get_tree().quit()
 		
-		%VolumeLabel.text = volume + "%"
-		%Volume.value = 100 - int(volume)
+		"TAGOF":
+			read_tags(args)
+		
+		"VOLUME":
+			%VolumeLabel.text = args[1] + "%"
+			%Volume.value = 100 - int(args[1])
+		
+		"REPEAT":
+			match args[1]:
+				"none":
+					%Repeat.icon = preload("res://src/no_repeat.png")
+					%Repeat.tooltip_text = "No repeat (Toggle to repeat all songs in playlist)"
+				
+				"all":
+					%Repeat.icon = preload("res://src/repeat.png")
+					%Repeat.tooltip_text = "Repeat all songs in playlist (Toggle to repeat one song infinitely)"
+				
+				"one":
+					%Repeat.icon = preload("res://src/repeat_one.png")
+					%Repeat.tooltip_text = "Repeat one song infinitely (Toggle to disable repeating)"
+		
+		"SHUFFLE":
+			%Shuffle.icon = SHUFFLE
+		
+		"NO_SHUFFLE":
+			%Shuffle.icon = NO_SHUFFLE
 
 
 func _on_library_item_activated() -> void:
@@ -379,3 +408,18 @@ func _on_play_pause_resume_pressed() -> void:
 	print("PAUSE" if is_pausing else "RESUME")
 	
 	%PlayPauseResume.text = PLAY_SYMBOL if is_pausing else PAUSE_SYMBOL
+
+
+func _on_repeat_pressed() -> void:
+	print("TOGGLE_REPEAT")
+
+
+func _on_shuffle_pressed() -> void:
+	match %Shuffle.icon:
+		NO_SHUFFLE:
+			%Shuffle.icon = SHUFFLE
+			print("SHUFFLE")
+		
+		SHUFFLE:
+			%Shuffle.icon = NO_SHUFFLE
+			print("NO_SHUFFLE")

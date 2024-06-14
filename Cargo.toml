@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+dirs = "5.0.1"
 id3 = "1.13.1"
 mp3-duration = "0.1.10"
 rdev = "0.5.3"
