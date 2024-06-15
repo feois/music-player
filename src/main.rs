@@ -269,10 +269,10 @@ impl App {
                 
                 self.gui().write_iter(&[
                     "TAGOF", path,
-                    "Title", tag.title().unwrap_or("No Title"),
-                    "Album", tag.album().unwrap_or("No Album"),
-                    "Artist", &tag.artists().map_or("No Artist".to_string(), |artists| artists.join(", ")),
-                    "Lyrics", tag.lyrics().find(|lyrics| lyrics.lang == "eng").map_or("No Lyrics", |lyrics| &lyrics.text),
+                    "Title", tag.title().filter(|s| !s.is_empty()).unwrap_or("No Title"),
+                    "Album", tag.album().filter(|s| !s.is_empty()).unwrap_or("No Album"),
+                    "Artist", &tag.artists().map(|artists| artists.join(", ")).filter(|s| !s.is_empty()).unwrap_or("No Artist".to_string()),
+                    "Lyrics", tag.lyrics().find(|lyrics| lyrics.lang == "eng").map(|lyrics| lyrics.text.as_str()).filter(|s| !s.is_empty()).unwrap_or("No Lyrics"),
                 ]);
             }
             Err(e) => println!("ERROR: Cannot read tag from {} ({})", path, e)
