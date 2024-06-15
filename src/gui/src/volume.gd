@@ -22,20 +22,19 @@ func _input(event: InputEvent) -> void:
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
-		if event.pressed:
-			match event.button_index:
-				MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT:
-					is_pressed = true
-					
-					if is_pressed:
-						update(event.position)
-					
-					accept_event()
+		match event.button_index:
+			MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT:
+				is_pressed = event.pressed
 				
-				MOUSE_BUTTON_WHEEL_UP:
+				if is_pressed:
+					update(event.position)
+				
+				accept_event()
+			
+			MOUSE_BUTTON_WHEEL_UP:
+				if event.pressed:
 					print("VOLINC")
-				
-				MOUSE_BUTTON_WHEEL_DOWN:
+			
+			MOUSE_BUTTON_WHEEL_DOWN:
+				if event.pressed:
 					print("VOLDEC")
-		else:
-			is_pressed = false

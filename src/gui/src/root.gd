@@ -1,3 +1,4 @@
+class_name Root
 extends Panel
 
 
@@ -17,6 +18,7 @@ enum TagMode {
 	LYRICS,
 }
 
+
 class Song extends RefCounted:
 	var path: String
 	var title: String
@@ -33,31 +35,26 @@ var inputs := {}
 
 var is_playing := false
 var is_pausing := false
-var song_duration := 0:
+var played_once := false
+var song_duration := 0.0:
 	set(value):
-		song_duration = value
+		song_duration = maxf(0, value)
 		
 		if is_node_ready():
-			%SongProgress.max_value = value
+			song_progress.max_value = song_duration
 var song_position := 0.0:
 	set(value):
-		song_position = value
+		song_position = maxf(0, value)
 		
 		if is_node_ready() and song_duration != 0:
-			%SongProgress.value = value
-			%SongProgress/TextureRect.position.x = %SongProgress.size.x * value / song_duration
-
-var settings_library_path: TreeItem
+			song_progress.value = song_position
+			%SongProgress/TextureRect.position.x = song_progress.size.x * song_position / song_duration - %SongProgress/TextureRect.size.x / 2
 
 @onready var default_library_path := OS.get_environment("USERPROFILE" if OS.has_feature("windows") else "HOME").path_join("Music")
-@onready var library_path := default_library_path:
-	set(value):
-		library_path = value
-		
-		if settings_library_path:
-			settings_library_path.set_text(1, value)
+@onready var library_path := default_library_path
 @onready var library: Tree = %Library
 @onready var treeroot: TreeItem = $Tree.create_item()
+@onready var song_progress: SongProgress = %SongProgress
 
 
 func _ready() -> void:
@@ -65,15 +62,16 @@ func _ready() -> void:
 	library.create_item()
 	Stdin.command.connect(command)
 	
-	init_settings()
-	
 	if read_cache():
 		for song in songs.values():
 			add_song(song)
 	else:
 		scan_directory(library_path)
 	
-	%SongProgress.modulate = Color(0, 0, 0, 0)
+	song_progress.modulate = Color(0, 0, 0, 0)
+	%Player.visible = false
+	
+	$SettingsPanel/Settings.initialize(self)
 
 
 func _physics_process(delta: float) -> void:
@@ -103,7 +101,7 @@ func _physics_process(delta: float) -> void:
 			
 			item.select(0)
 	
-	if Input.is_action_just_pressed(&"hide details"):
+	if Input.is_action_just_pressed(&"hide details") and played_once:
 		%Player.visible = not %Player.visible
 	
 	if Input.is_action_just_pressed(&"hide playlists"):
@@ -112,10 +110,16 @@ func _physics_process(delta: float) -> void:
 	%Repeat.custom_minimum_size.x = %ControlBar.size.y
 	%Shuffle.custom_minimum_size.x = %ControlBar.size.y
 	
-	%SongProgress.modulate = Color(1, 1, 1, 1) if is_playing and song_duration > 0 else Color(0, 0, 0, 0)
+	song_progress.modulate = Color(1, 1, 1, 1) if is_playing and song_duration > 0 else Color(0, 0, 0, 0)
 	
 	if is_playing and not is_pausing:
 		song_position += delta
+		
+		if song_duration > 0 and song_position > song_duration:
+			if %Repeat.icon == preload("res://src/repeat_one.png"):
+				song_position = 0
+			else:
+				is_playing = false
 
 
 func _notification(what: int) -> void:
@@ -147,6 +151,8 @@ func read_cache() -> bool:
 				
 				library_path = json.path
 				
+				song_progress.background = json.progress_background
+				
 				return true
 	
 	return false
@@ -156,6 +162,7 @@ func save_cache() -> void:
 	FileAccess.open(CACHE_FILE, FileAccess.WRITE).store_string(JSON.stringify({
 		songs = serialize_songs(),
 		path = library_path,
+		progress_background = song_progress.background,
 	}, "\t"))
 
 
@@ -262,6 +269,7 @@ func add_song(song: Song) -> void:
 	item.set_text(0, song.title)
 	item.add_button(0, preload("res://src/small-icon.svg"))
 	item.set_meta(&"songres", song)
+	item.set_tooltip_text(0, song.path)
 	
 	song_items[song.path] = item
 	
@@ -324,11 +332,13 @@ func command(string: String) -> void:
 			read_tags(args)
 		
 		"VOLUME":
-			%VolumeLabel.text = args[1] + "%"
-			%Volume.value = 100 - int(args[1])
+			var volume := float(args[1]) * 100
+			
+			%VolumeLabel.text = str(roundi(volume)) + "%"
+			%Volume.value = 100 - volume
 		
 		"DURATION":
-			song_duration = int(args[1])
+			song_duration = float(args[1])
 		
 		"REPEAT":
 			match args[1]:
@@ -357,11 +367,18 @@ func command(string: String) -> void:
 		"PAUSE":
 			%PlayPauseResume.text = PLAY_SYMBOL
 			is_pausing = true
+		
+		"REWIND":
+			song_position -= float(args[1])
+		
+		"FAST_FORWARD":
+			song_position += float(args[1])
 
 
 func play_song(song: Song) -> void:
 	prints("PLAY", song.path)
 	
+	%Player.visible = true
 	%Title.text = song.title
 	%Artist.text = "" if song.artist == "No Artist" else song.artist
 	%TitleArtistConnector.visible = not %Artist.text.is_empty()
@@ -369,6 +386,7 @@ func play_song(song: Song) -> void:
 	%Lyrics.text = "" if song.lyrics == "No Lyrics" else song.lyrics
 	%PlayPauseResume.text = PAUSE_SYMBOL
 	
+	played_once = true
 	is_playing = true
 	song_position = 0.0
 
@@ -387,39 +405,13 @@ func _on_library_item_selected() -> void:
 	library.scroll_to_item(library.get_selected())
 
 
-func init_settings() -> void:
-	var settings := $SettingsPanel/Panel/Settings as Tree
-	var root := settings.create_item()
-	
-	settings_library_path = root.create_child()
-	settings_library_path.set_text(0, "Music library path")
-	settings_library_path.set_editable(1, true)
-	settings_library_path.set_selectable(0, false)
-	settings_library_path.add_button(0, preload("res://src/small-icon.svg"))
-	settings_library_path.add_button(1, preload("res://src/small-icon.svg"))
-
-
 func _on_settings_pressed() -> void:
-	settings_library_path.set_text(1, library_path)
-	
-	$SettingsPanel.visible = true
-
-
-func _on_settings_button_clicked(item: TreeItem, column: int, _id: int, _mouse_button_index: int) -> void:
-	match item:
-		settings_library_path:
-			if column == 0:
-				library_path = default_library_path
-			else:
-				$SettingsPanel/LibraryPathSelector.popup_centered()
+	$SettingsPanel/Settings.initialize()
+	$SettingsPanel.popup_centered()
 
 
 func _on_library_path_selector_dir_selected(dir: String) -> void:
 	library_path = dir
-
-
-func _on_settings_panel_close_requested() -> void:
-	$SettingsPanel.visible = false
 
 
 func _on_reload_library_pressed() -> void:
@@ -452,3 +444,29 @@ func _on_shuffle_pressed() -> void:
 		SHUFFLE:
 			%Shuffle.icon = NO_SHUFFLE
 			print("NO_SHUFFLE")
+
+
+func _on_rewind_pressed() -> void:
+	print("REWIND")
+
+
+func _on_fast_forward_pressed() -> void:
+	print("FAST_FORWARD")
+
+
+func _on_song_progress_seek(pct: float) -> void:
+	song_position = pct * song_duration
+	prints("SEEK", song_position)
+
+
+func _on_to_begin_pressed() -> void:
+	song_position = 0
+	prints("SEEK", 0)
+
+
+func _on_settings_close() -> void:
+	$SettingsPanel.visible = false
+
+
+func _on_close_app_pressed() -> void:
+	print("EXIT_ALL")

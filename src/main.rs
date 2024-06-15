@@ -11,8 +11,8 @@ use player::*;
 use events::*;
 use id3::{Tag, TagLike};
 
-#[cfg(target_os = "linux")]
-use xosd_rs::Xosd;
+// #[cfg(target_os = "linux")]
+// use xosd_rs::Xosd;
 
 
 pub trait BooleanConditional {
@@ -48,6 +48,7 @@ struct App {
     delta: Duration,
     volume_step: f32,
     key_duration: Duration,
+    seek_duration: Duration,
     
     toggle_gui: Option<usize>,
     quit_app: Option<usize>,
@@ -57,6 +58,8 @@ struct App {
     volume_decrease: Option<usize>,
     toggle_repeat_mode: Option<usize>,
     toggle_shuffling: Option<usize>,
+    rewind: Option<usize>,
+    fast_forward: Option<usize>,
     
     request_duration: bool,
 }
@@ -73,6 +76,7 @@ impl App {
             delta: Duration::ZERO,
             volume_step: 0.05,
             key_duration: Duration::from_millis(100),
+            seek_duration: Duration::from_secs(5),
             
             toggle_gui: None,
             quit_app: None,
@@ -82,6 +86,8 @@ impl App {
             volume_decrease: None,
             toggle_repeat_mode: None,
             toggle_shuffling: None,
+            rewind: None,
+            fast_forward: None,
             
             request_duration: false,
         };
@@ -97,16 +103,25 @@ impl App {
         
         app.volume_increase = Some(app.listener.register_combination([Key::Alt, Key::UpArrow], app.key_duration));
         app.volume_decrease = Some(app.listener.register_combination([Key::Alt, Key::DownArrow], app.key_duration));
+        app.rewind = Some(app.listener.register_combination([Key::Alt, Key::LeftArrow], app.key_duration * 2));
+        app.fast_forward = Some(app.listener.register_combination([Key::Alt, Key::RightArrow], app.key_duration * 2));
         
         app.launch_gui();
         
         loop {
             let t = Instant::now();
             
-            app.gui_events();
-            
-            if app.key_events() {
+            if app.gui_events() || app.key_events() {
+                app.close_gui();
                 break;
+            }
+            
+            if app.player.is_finished() {
+                match app.player.repeat_mode {
+                    RepeatMode::NoRepeat => {}
+                    RepeatMode::RepeatTrack => app.player.replay(),
+                    RepeatMode::Repeat => todo!()
+                }
             }
             
             let t = Instant::now().duration_since(t);
@@ -117,7 +132,7 @@ impl App {
         }
     }
     
-    fn gui_events(&mut self) {
+    fn gui_events(&mut self) -> bool {
         let mut close = false;
         
         if self.request_duration && self.player.get_length() != Duration::ZERO {
@@ -142,7 +157,11 @@ impl App {
                 "SHUFFLE" => self.player.shuffle = true,
                 "NO_SHUFFLE" => self.player.shuffle = false,
                 "INFO" => println!("GODOT-PRINT: {}", args),
+                "REWIND" => self.rewind(),
+                "FAST_FORWARD" => self.fast_forward(),
+                "SEEK" => args.parse().map(|d| self.player.seek(Duration::from_secs_f64(d))).err().map(|e| println!("ERROR: Cannot seek {} {}", args, e)).unwrap_or(()),
                 "EXIT" => close = true,
+                "EXIT_ALL" => return true,
                 _ => println!("GODOT: {}", command),
             }
         }
@@ -150,6 +169,8 @@ impl App {
         if close || self.gui.as_mut().is_some_and(GUI::finished) {
             self.close_gui();
         }
+        
+        false
     }
     
     fn key_events(&mut self) -> bool {
@@ -166,7 +187,6 @@ impl App {
             }
             
             if comb == self.quit_app {
-                self.close_gui();
                 return true;
             }
             
@@ -203,18 +223,21 @@ impl App {
                 self.player.shuffle = !self.player.shuffle;
                 [if self.player.shuffle { "SHUFFLE" } else { "NO_SHUFFLE" }].gui_write_if(self);
             }
+            
+            if comb == self.rewind {
+                self.rewind();
+            }
+            
+            if comb == self.fast_forward {
+                self.fast_forward();
+            }
         }
         
         false
     }
     
     #[inline(always)]
-    fn gui(&self) -> &GUI {
-        self.gui.as_ref().unwrap()
-    }
-    
-    #[inline(always)]
-    fn mgui(&mut self) -> &mut GUI {
+    fn gui(&mut self) -> &mut GUI {
         self.gui.as_mut().unwrap()
     }
     
@@ -229,7 +252,7 @@ impl App {
         println!("TASK: Launching GUI");
         
         self.gui.replace(GUI::launch(dir.as_os_str()));
-        ["VOLUME", &self.rounded_volume().to_string()].gui_write(self);
+        ["VOLUME", &self.player.volume.to_string()].gui_write(self);
         self.write_repeat_mode();
         [if self.player.shuffle { "SHUFFLE" } else { "NO_SHUFFLE" }].gui_write_if(self);
     }
@@ -244,7 +267,7 @@ impl App {
             Ok(tag) => {
                 println!("TASK: Reading tag of {}", path);
                 
-                self.mgui().write_iter(&[
+                self.gui().write_iter(&[
                     "TAGOF", path,
                     "Title", tag.title().unwrap_or("No Title"),
                     "Album", tag.album().unwrap_or("No Album"),
@@ -261,22 +284,28 @@ impl App {
         self.player.update_volume();
         
         if notify && self.gui.is_some() {
-            ["VOLUME", &self.rounded_volume().to_string()].gui_write_if(self);
+            ["VOLUME", &self.player.volume.to_string()].gui_write_if(self);
         }
-    }
-    
-    fn rounded_volume(&self) -> i32 {
-        (self.player.volume * 100.).round() as i32
     }
     
     fn write_repeat_mode(&mut self) {
         ["REPEAT", self.player.repeat_mode.to_str()].gui_write_if(self);
     }
+    
+    fn rewind(&mut self) {
+        self.player.rewind(self.seek_duration);
+        ["REWIND", &self.seek_duration.as_secs_f64().to_string()].gui_write_if(self);
+    }
+    
+    fn fast_forward(&mut self) {
+        self.player.fast_forward(self.seek_duration);
+        ["FAST_FORWARD", &self.seek_duration.as_secs_f64().to_string()].gui_write_if(self);
+    }
 }
 
 impl AsMut<GUI> for App {
     fn as_mut(&mut self) -> &mut GUI {
-        self.mgui()
+        self.gui()
     }
 }
 
