@@ -25,13 +25,25 @@ class Song extends RefCounted:
 	var artist: String
 	var album: String
 	var lyrics: String
+	
+	func filter(words: String) -> bool:
+		for word in words.split(" ", false):
+			var low := word.to_lower()
+			
+			if not (title.to_lower().contains(low) or artist.to_lower().contains(low) or album.to_lower().contains(low)):
+				return false
+		
+		return true
 
 
 var songs := {}
 var artists := {}
-var song_items := {}
-var uninitalized_songs := {}
+var albums := {}
+
 var inputs := {}
+var grouped_by_artists := true
+var played_once := false
+var last_focus: Control
 
 var is_playing := false:
 	set(value):
@@ -46,7 +58,6 @@ var is_playing := false:
 		%FastForward.disabled = not value
 		%StopSong.disabled = not value
 var is_pausing := false
-var played_once := false
 var song_duration := 0.0:
 	set(value):
 		song_duration = maxf(0, value)
@@ -84,6 +95,10 @@ func _ready() -> void:
 	is_playing = false
 	
 	$SettingsPanel/Settings.initialize(self)
+	
+	get_viewport().gui_focus_changed.connect(func (control: Control) -> void:
+		if control != %Search:
+			last_focus = control)
 
 
 func _physics_process(delta: float) -> void:
@@ -118,6 +133,9 @@ func _physics_process(delta: float) -> void:
 	
 	if Input.is_action_just_pressed(&"hide playlists"):
 		%Playlists.visible = not %Playlists.visible
+	
+	if Input.is_action_just_pressed(&"search"):
+		%Search.grab_focus()
 	
 	%Repeat.custom_minimum_size.x = %ControlBar.size.y
 	%Shuffle.custom_minimum_size.x = %ControlBar.size.y
@@ -164,6 +182,7 @@ func read_cache() -> bool:
 				library_path = json.path
 				
 				song_progress.background = json.progress_background
+				grouped_by_artists = json.grouping
 				
 				return true
 	
@@ -175,6 +194,7 @@ func save_cache() -> void:
 		songs = serialize_songs(),
 		path = library_path,
 		progress_background = song_progress.background,
+		grouping = grouped_by_artists,
 	}, "\t"))
 
 
@@ -236,6 +256,13 @@ func comparer(x: TreeItem, y: TreeItem) -> bool:
 	return x.get_text(0) < y.get_text(0)
 
 
+func clear_library() -> void:
+	artists.clear()
+	albums.clear()
+	library.clear()
+	library.create_item()
+
+
 func get_artist(artist: String) -> TreeItem:
 	if artists.has(artist):
 		return artists[artist]
@@ -252,7 +279,7 @@ func get_artist(artist: String) -> TreeItem:
 	return item
 
 
-func get_album(artist: TreeItem, album: String) -> TreeItem:
+func get_artist_album(artist: TreeItem, album: String) -> TreeItem:
 	var d := artist.get_meta(&"albums", {}) as Dictionary
 	
 	if d.has(album):
@@ -271,21 +298,59 @@ func get_album(artist: TreeItem, album: String) -> TreeItem:
 	return item
 
 
+func get_album(album: String) -> TreeItem:
+	if albums.has(album):
+		return albums[album]
+	
+	var item := treeroot.create_child()
+	
+	item.set_text(0, album)
+	item.set_meta(&"artists", {})
+	
+	reparent_item(item, library.get_root())
+	
+	albums[album] = item
+	
+	return item
+
+
+func get_album_artist(album: TreeItem, artist: String) -> TreeItem:
+	var d := album.get_meta(&"artists") as Dictionary
+	
+	if d.has(artist):
+		return d[artist]
+	
+	var item := treeroot.create_child()
+	
+	item.set_text(0, artist)
+	
+	reparent_item(item, album)
+	
+	d[artist] = item
+	
+	album.set_meta(&"artists", d)
+	
+	return item
+
+
 func get_song(item: TreeItem) -> Song:
 	return item.get_meta(&"songres") as Song if item.has_meta(&"songres") else null
 
 
 func add_song(song: Song) -> void:
-	var item := treeroot.create_child()
-	
-	item.set_text(0, song.title)
-	item.add_button(0, preload("res://src/small-icon.svg"))
-	item.set_meta(&"songres", song)
-	item.set_tooltip_text(0, song.path)
-	
-	song_items[song.path] = item
-	
-	reparent_item(item, get_album(get_artist(song.artist), song.album))
+	if %Search.text.is_empty() or song.filter(%Search.text):
+		var item := treeroot.create_child()
+		var parent := (
+			get_artist_album(get_artist(song.artist), song.album)
+			if grouped_by_artists
+			else get_album_artist(get_album(song.album), song.artist))
+		
+		item.set_text(0, song.title)
+		item.add_button(0, preload("res://src/small-icon.svg"))
+		item.set_meta(&"songres", song)
+		item.set_tooltip_text(0, song.path)
+		
+		reparent_item(item, parent)
 
 
 func read_tags(args: PackedStringArray) -> void:
@@ -430,11 +495,8 @@ func _on_library_path_selector_dir_selected(dir: String) -> void:
 
 
 func _on_reload_library_pressed() -> void:
-	song_items.clear()
-	artists.clear()
 	songs.clear()
-	library.clear()
-	library.create_item()
+	clear_library()
 	scan_directory(library_path)
 
 
@@ -493,3 +555,41 @@ func _on_close_app_pressed() -> void:
 func _on_stop_song_pressed() -> void:
 	print("STOP")
 	is_playing = false
+
+
+func _on_library_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		if event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+			$LibraryGroup.set_item_checked(0, grouped_by_artists)
+			$LibraryGroup.set_item_checked(1, not grouped_by_artists)
+			$LibraryGroup.popup(Rect2i(get_local_mouse_position(), Vector2.ZERO))
+
+
+func _on_library_group_id_pressed(id: int) -> void:
+	if grouped_by_artists:
+		if id == 1:
+			grouped_by_artists = false
+			
+			clear_library()
+			
+			for song in songs:
+				add_song(songs[song])
+	elif id == 0:
+		grouped_by_artists = true
+		
+		clear_library()
+		
+		for song in songs:
+			add_song(songs[song])
+
+
+func _on_search_text_changed(_new_text: String) -> void:
+	clear_library()
+	
+	for song in songs:
+		add_song(songs[song])
+
+
+func _on_search_text_submitted(_new_text: String) -> void:
+	if last_focus:
+		last_focus.grab_focus()

@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3 uid="uid://b81u1c55uki6f"]
+[gd_scene load_steps=31 format=3 uid="uid://b81u1c55uki6f"]
 
 [ext_resource type="Script" path="res://src/root.gd" id="1_21msl"]
 [ext_resource type="FontFile" uid="uid://c2bj8wx8rbb76" path="res://src/InterTight-VariableFont_wght.ttf" id="1_b7wi4"]
@@ -6,11 +6,16 @@
 [ext_resource type="Texture2D" uid="uid://d4misdx7d6u8c" path="res://src/icon.svg" id="2_8nwv5"]
 [ext_resource type="Texture2D" uid="uid://dotq3tixjvymo" path="res://src/Speaker_Icon.svg.png" id="3_mxx5r"]
 [ext_resource type="Script" path="res://src/volume.gd" id="4_4f0bk"]
+[ext_resource type="Texture2D" uid="uid://n0nl17yib76k" path="res://src/search.png" id="4_fa8re"]
 [ext_resource type="Texture2D" uid="uid://chw4vn7j0ldin" path="res://src/repeat.png" id="6_08qgn"]
 [ext_resource type="Texture2D" uid="uid://bi8eq56dy7vlo" path="res://src/progress_circle.png" id="6_h50mn"]
 [ext_resource type="Texture2D" uid="uid://m0707gni8b1c" path="res://src/shuffle.png" id="7_gk0bi"]
 [ext_resource type="Script" path="res://src/progress.gd" id="7_r6b18"]
 [ext_resource type="PackedScene" uid="uid://3t5vyoah711r" path="res://src/settings.tscn" id="13_eldab"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1r2kf"]
+bg_color = Color(0, 0, 0, 0)
+border_width_bottom = 1
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ntp3s"]
 bg_color = Color(0, 0, 0, 1)
@@ -93,6 +98,7 @@ Album/fonts/font = ExtResource("1_b7wi4")
 Artist/base_type = &"Label"
 Artist/font_sizes/font_size = 24
 Artist/fonts/font = ExtResource("1_b7wi4")
+LineEdit/styles/normal = SubResource("StyleBoxFlat_1r2kf")
 Lyrics/base_type = &"Label"
 Lyrics/font_sizes/font_size = 16
 Panel/styles/panel = SubResource("StyleBoxFlat_ntp3s")
@@ -148,42 +154,59 @@ grow_vertical = 2
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="VBoxContainer2" type="VBoxContainer" parent="HBoxContainer/HSplitContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="HBoxContainer/HSplitContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
 
-[node name="MarginContainer" type="MarginContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer2"]
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/HSplitContainer/MarginContainer"]
 layout_mode = 2
-theme_override_constants/margin_left = 2
-theme_override_constants/margin_top = 2
-theme_override_constants/margin_right = 2
-theme_override_constants/margin_bottom = 2
+theme_override_constants/separation = 8
 
-[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer2/MarginContainer"]
+[node name="HBoxContainer2" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="Settings" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer2/MarginContainer/HBoxContainer"]
+[node name="Settings" type="Button" parent="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
 tooltip_text = "Settings"
 theme_type_variation = &"Toolbar"
 text = "⚙"
 expand_icon = true
 
-[node name="ReloadLibrary" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer2/MarginContainer/HBoxContainer"]
+[node name="ReloadLibrary" type="Button" parent="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
 tooltip_text = "Refresh Library"
 theme_type_variation = &"Toolbar"
 text = "↻"
 expand_icon = true
 
-[node name="CloseApp" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer2/MarginContainer/HBoxContainer"]
+[node name="CloseApp" type="Button" parent="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
 tooltip_text = "Refresh Library"
 theme_type_variation = &"Toolbar"
 text = "×"
 expand_icon = true
 
-[node name="Library" type="Tree" parent="HBoxContainer/HSplitContainer/VBoxContainer2"]
+[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+texture = ExtResource("4_fa8re")
+expand_mode = 2
+stretch_mode = 4
+
+[node name="Search" type="LineEdit" parent="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Search Library"
+caret_blink = true
+
+[node name="Library" type="Tree" parent="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
@@ -455,11 +478,24 @@ exclusive = true
 
 [node name="Settings" parent="SettingsPanel" instance=ExtResource("13_eldab")]
 
-[connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer2/MarginContainer/HBoxContainer/Settings" to="." method="_on_settings_pressed"]
-[connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer2/MarginContainer/HBoxContainer/ReloadLibrary" to="." method="_on_reload_library_pressed"]
-[connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer2/MarginContainer/HBoxContainer/CloseApp" to="." method="_on_close_app_pressed"]
-[connection signal="item_activated" from="HBoxContainer/HSplitContainer/VBoxContainer2/Library" to="." method="_on_library_item_activated"]
-[connection signal="item_selected" from="HBoxContainer/HSplitContainer/VBoxContainer2/Library" to="." method="_on_library_item_selected"]
+[node name="LibraryGroup" type="PopupMenu" parent="."]
+size = Vector2i(185, 100)
+item_count = 2
+item_0/text = "Group by artists"
+item_0/checkable = 2
+item_0/id = 0
+item_1/text = "Group by album"
+item_1/checkable = 2
+item_1/id = 1
+
+[connection signal="pressed" from="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer2/Settings" to="." method="_on_settings_pressed"]
+[connection signal="pressed" from="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer2/ReloadLibrary" to="." method="_on_reload_library_pressed"]
+[connection signal="pressed" from="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer2/CloseApp" to="." method="_on_close_app_pressed"]
+[connection signal="text_changed" from="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer/Search" to="." method="_on_search_text_changed"]
+[connection signal="text_submitted" from="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer/Search" to="." method="_on_search_text_submitted"]
+[connection signal="gui_input" from="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/Library" to="." method="_on_library_gui_input"]
+[connection signal="item_activated" from="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/Library" to="." method="_on_library_item_activated"]
+[connection signal="item_selected" from="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/Library" to="." method="_on_library_item_selected"]
 [connection signal="mouse_entered" from="HBoxContainer/HSplitContainer/VBoxContainer/SongProgress" to="HBoxContainer/HSplitContainer/VBoxContainer/SongProgress" method="_on_mouse_entered"]
 [connection signal="mouse_exited" from="HBoxContainer/HSplitContainer/VBoxContainer/SongProgress" to="HBoxContainer/HSplitContainer/VBoxContainer/SongProgress" method="_on_mouse_exited"]
 [connection signal="seek" from="HBoxContainer/HSplitContainer/VBoxContainer/SongProgress" to="." method="_on_song_progress_seek"]
@@ -471,3 +507,4 @@ exclusive = true
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/StopSong" to="." method="_on_stop_song_pressed"]
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/Shuffle" to="." method="_on_shuffle_pressed"]
 [connection signal="close" from="SettingsPanel/Settings" to="." method="_on_settings_close"]
+[connection signal="id_pressed" from="LibraryGroup" to="." method="_on_library_group_id_pressed"]
