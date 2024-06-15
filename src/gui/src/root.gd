@@ -33,7 +33,18 @@ var song_items := {}
 var uninitalized_songs := {}
 var inputs := {}
 
-var is_playing := false
+var is_playing := false:
+	set(value):
+		is_playing = value
+		
+		if not is_playing:
+			is_pausing = false
+			%PlayPauseResume.text = PLAY_SYMBOL
+		
+		%ToBegin.disabled = not value
+		%Rewind.disabled = not value
+		%FastForward.disabled = not value
+		%StopSong.disabled = not value
 var is_pausing := false
 var played_once := false
 var song_duration := 0.0:
@@ -70,6 +81,7 @@ func _ready() -> void:
 	
 	song_progress.modulate = Color(0, 0, 0, 0)
 	%Player.visible = false
+	is_playing = false
 	
 	$SettingsPanel/Settings.initialize(self)
 
@@ -368,6 +380,9 @@ func command(string: String) -> void:
 			%PlayPauseResume.text = PLAY_SYMBOL
 			is_pausing = true
 		
+		"STOP":
+			is_playing = false
+		
 		"REWIND":
 			song_position -= float(args[1])
 		
@@ -424,11 +439,14 @@ func _on_reload_library_pressed() -> void:
 
 
 func _on_play_pause_resume_pressed() -> void:
-	is_pausing = not is_pausing
-	
-	print("PAUSE" if is_pausing else "RESUME")
-	
-	%PlayPauseResume.text = PLAY_SYMBOL if is_pausing else PAUSE_SYMBOL
+	if is_playing:
+		is_pausing = not is_pausing
+		
+		print("PAUSE" if is_pausing else "RESUME")
+		
+		%PlayPauseResume.text = PLAY_SYMBOL if is_pausing else PAUSE_SYMBOL
+	else:
+		pass
 
 
 func _on_repeat_pressed() -> void:
@@ -470,3 +488,8 @@ func _on_settings_close() -> void:
 
 func _on_close_app_pressed() -> void:
 	print("EXIT_ALL")
+
+
+func _on_stop_song_pressed() -> void:
+	print("STOP")
+	is_playing = false

@@ -468,5 +468,6 @@ exclusive = true
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/Rewind" to="." method="_on_rewind_pressed"]
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/PlayPauseResume" to="." method="_on_play_pause_resume_pressed"]
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/FastForward" to="." method="_on_fast_forward_pressed"]
+[connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/StopSong" to="." method="_on_stop_song_pressed"]
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/Shuffle" to="." method="_on_shuffle_pressed"]
 [connection signal="close" from="SettingsPanel/Settings" to="." method="_on_settings_close"]

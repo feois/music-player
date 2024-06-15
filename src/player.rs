@@ -60,6 +60,7 @@ impl Player {
     #[inline(always)]
     pub fn stop(&mut self) {
         self.player.stop();
+        self.resume();
     }
     
     #[inline(always)]
