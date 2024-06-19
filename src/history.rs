@@ -12,7 +12,7 @@ pub struct History<T> {
 }
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 struct SerializedHistory<T> {
     vec: Vec<T>,
     lookback: usize,

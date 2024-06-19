@@ -20,7 +20,7 @@ pub struct Player {
 }
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(serde_derive::Serialize, serde_derive::Deserialize)]
 struct SerializedPlayer {
     mute: bool,
     volume: f32,
