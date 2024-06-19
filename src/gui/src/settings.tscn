@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://3t5vyoah711r"]
+[gd_scene load_steps=3 format=3 uid="uid://3t5vyoah711r"]
 
 [ext_resource type="Script" path="res://src/settings.gd" id="1_5fmu4"]
+[ext_resource type="Texture2D" uid="uid://c4hfe1oxgr2ry" path="res://src/open.svg" id="2_ughdl"]
 
 [node name="Settings" type="Panel"]
 anchors_preset = 15
@@ -75,7 +76,8 @@ size_flags_horizontal = 3
 [node name="LibraryPathOpen" type="Button" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer/HBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "📁"
+icon = ExtResource("2_ughdl")
+expand_icon = true
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer"]
 layout_mode = 2

@@ -1,86 +1,115 @@
 use std::time::Duration;
 
 use playback_rs::Song;
+use serde::{Deserialize, Serialize};
 
 
-pub enum RepeatMode {
-    NoRepeat,
-    Repeat,
-    RepeatTrack,
+pub enum PlayerState {
+    Idle,
+    Play,
+    Pause,
+    Finished,
 }
 
-impl RepeatMode {
-    #[inline(always)]
-    pub fn to_str(&self) -> &'static str {
-        match self {
-            Self::NoRepeat => "none",
-            Self::Repeat => "all",
-            Self::RepeatTrack => "one",
-        }
-    }
-}
 
 pub struct Player {
     player: playback_rs::Player,
+    state: PlayerState,
+    pub mute: bool,
     pub volume: f32,
-    pub repeat_mode: RepeatMode,
-    pub shuffle: bool,
-    pub song: Option<Song>,
 }
+
+
+#[derive(Serialize, Deserialize)]
+struct SerializedPlayer {
+    mute: bool,
+    volume: f32,
+}
+
 
 impl Player {
     #[inline(always)]
     pub fn new() -> Self {
         Self {
             player: playback_rs::Player::new(None).expect("Failed to initialize player"),
+            state: PlayerState::Idle,
+            mute: false,
             volume: 1.,
-            repeat_mode: RepeatMode::NoRepeat,
-            shuffle: false,
-            song: None,
         }
     }
     
     #[inline(always)]
-    pub fn play(&mut self, filepath: &str) {
-        self.resume();
-        
-        match Song::from_file(filepath, None) {
-            Ok(song) => {
-                match self.player.play_song_now(&song, None) {
-                    Ok(_) => {}
-                    Err(e) => println!("Failed to play song {} {:?}", filepath, e)
+    pub fn update_state(&mut self) {
+        match self.state {
+            PlayerState::Play | PlayerState::Pause => {
+                if !self.player.has_current_song() {
+                    self.state = PlayerState::Finished
                 }
-                
-                self.song.replace(song);
             }
-            Err(e) => println!("Failed to load song {} {:?}", filepath, e),
+            _ => {}
+        }
+    }
+    
+    #[inline(always)]
+    pub fn get_state(&self) -> &PlayerState {
+        &self.state
+    }
+    
+    #[inline(always)]
+    pub fn idle(&mut self) {
+        if let PlayerState::Finished = self.state {
+            self.state = PlayerState::Idle
+        }
+    }
+    
+    #[inline(always)]
+    pub fn play(&mut self, path: &str) {
+        match Song::from_file(path, None) {
+            Ok(song) => {
+                if let Some(e) = self.player.play_song_now(&song, None).err() {
+                    println!("Failed to play song {:?}", e)
+                }
+                else {
+                    self.resume();
+                    self.state = PlayerState::Play;
+                }
+            }
+            Err(e) => println!("Failed to load song {} {:?}", path, e),
         }
     }
     
     #[inline(always)]
     pub fn stop(&mut self) {
         self.player.stop();
-        self.resume();
+        
+        if let PlayerState::Finished = self.state {}
+        else { self.state = PlayerState::Idle; }
     }
     
     #[inline(always)]
-    pub fn pause(&self) {
+    pub fn skip(&mut self) {
+        self.player.stop();
+        
+        if let PlayerState::Idle = self.state {}
+        else { self.state = PlayerState::Finished; }
+    }
+    
+    #[inline(always)]
+    pub fn pause(&mut self) {
         self.player.set_playing(false);
+        
+        if let PlayerState::Play = self.state {
+            self.state = PlayerState::Pause;
+        }
     }
     
     #[inline(always)]
-    pub fn resume(&self) {
+    pub fn resume(&mut self) {
         self.player.set_playing(true);
-    }
-    
-    #[inline(always)]
-    pub fn is_playing(&self) -> bool {
-        self.player.is_playing()
-    }
-    
-    #[inline(always)]
-    pub fn is_finished(&self) -> bool {
-        !self.player.has_current_song()
+        
+        if let PlayerState::Pause = self.state {
+            self.state = PlayerState::Play;
+        }
     }
     
     #[inline(always)]
@@ -95,7 +124,7 @@ impl Player {
     
     #[inline(always)]
     pub fn update_volume(&self) {
-        self.player.set_volume(self.volume)
+        self.player.set_volume(if self.mute { 0. } else { self.volume })
     }
     
     #[inline(always)]
@@ -112,25 +141,34 @@ impl Player {
     pub fn seek(&self, duration: Duration) {
         self.player.seek(duration);
     }
-    
+}
+
+
+impl Serialize for Player {
     #[inline(always)]
-    pub fn replay(&self) {
-        if let Some(song) = &self.song {
-            match self.player.play_song_now(song, None) {
-                Ok(_) => {}
-                Err(e) => println!("ERROR: Failed to replay {}", e)
-            }
-        }
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer {
+        SerializedPlayer {
+            mute: self.mute,
+            volume: self.volume
+        }.serialize(serializer)
     }
-    
+}
+
+
+impl<'de> Deserialize<'de> for Player {
     #[inline(always)]
-    pub fn toggle_repeat_mode(&mut self) -> &RepeatMode {
-        self.repeat_mode = match self.repeat_mode {
-            RepeatMode::NoRepeat => RepeatMode::Repeat,
-            RepeatMode::Repeat => RepeatMode::RepeatTrack,
-            RepeatMode::RepeatTrack => RepeatMode::NoRepeat,
-        };
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de> {
+        let s = SerializedPlayer::deserialize(deserializer)?;
         
-        &self.repeat_mode
+        let mut p = Player::new();
+        
+        p.mute = s.mute;
+        p.volume = s.volume;
+        
+        Ok(p)
     }
 }

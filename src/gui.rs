@@ -5,17 +5,18 @@ pub const DELIMETER: &str = "::::";
 pub const ENDLINE: &str = ";;;;";
 
 
-pub struct GUI<const BUFFER_SIZE: usize = 1024> {
+pub struct GUI {
     process: Child,
     stdin: ChildStdin,
     receiver: Receiver<String>,
     buffer: String,
 }
 
-impl<const BUFFER_SIZE: usize> GUI<BUFFER_SIZE> {
+impl GUI {
     #[inline(always)]
-    pub fn launch(path: &OsStr) -> Self {
+    pub fn launch<T: AsRef<OsStr>>(path: &OsStr, args: impl IntoIterator<Item = T>) -> Self {
         let mut process = Command::new(path)
+            .args(args)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()
@@ -110,21 +111,20 @@ impl<const BUFFER_SIZE: usize> GUI<BUFFER_SIZE> {
             spin_sleep::sleep(Duration::from_millis(500));
             
             if !self.finished() {
-                println!("ERROR: Failed to close GUI");
+                println!("INFO: GUI has not closed yet");
                 
                 thread::spawn(move || {
                     for i in 0..3 {
-                        self.write_line("EXIT");
-                        
                         spin_sleep::sleep(Duration::from_secs(1));
                         
                         if self.finished() {
                             return;
                         }
                         
-                        println!("ERROR: Failed to close GUI, try {}", i + 1);
+                        println!("INFO: GUI has not closed yet, waiting {}", i + 1);
                     }
                     
+                    println!("ERROR: Failed to close GUI");
                     println!("TASK: Killing GUI");
                     
                     self.process.kill().expect("Failed to kill");

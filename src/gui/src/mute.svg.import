@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cjpm38rup3rad"
-path="res://.godot/imported/gear.svg-97abcf5f18dc93190a21da3a837e4785.ctex"
+uid="uid://c85hb73vcih3d"
+path="res://.godot/imported/mute.svg-d2d9e2e3e12fc2fddaa3f72b2e220d98.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://src/gear.svg"
-dest_files=["res://.godot/imported/gear.svg-97abcf5f18dc93190a21da3a837e4785.ctex"]
+source_file="res://src/mute.svg"
+dest_files=["res://.godot/imported/mute.svg-d2d9e2e3e12fc2fddaa3f72b2e220d98.ctex"]
 
 [params]
 

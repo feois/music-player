@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=3 uid="uid://ekd0yhq8rahv"]
+
+[ext_resource type="Script" path="res://src/playlist.gd" id="1_yga85"]
+
+[node name="Playlist" type="Tree"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+columns = 4
+column_titles_visible = true
+hide_folding = true
+hide_root = true
+select_mode = 1
+script = ExtResource("1_yga85")
+
+[connection signal="item_activated" from="." to="." method="_on_item_activated"]
+[connection signal="item_selected" from="." to="." method="_on_item_selected"]

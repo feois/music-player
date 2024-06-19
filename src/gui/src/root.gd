@@ -2,7 +2,6 @@ class_name Root
 extends Panel
 
 
-const CACHE_FILE := "user://cache.json"
 const PLAY_SYMBOL := "⏵"
 const PAUSE_SYMBOL := "⏸"
 
@@ -18,22 +17,11 @@ enum TagMode {
 	LYRICS,
 }
 
-
-class Song extends RefCounted:
-	var path: String
-	var title: String
-	var artist: String
-	var album: String
-	var lyrics: String
-	
-	func filter(words: String) -> bool:
-		for word in words.split(" ", false):
-			var low := word.to_lower()
-			
-			if not (title.to_lower().contains(low) or artist.to_lower().contains(low) or album.to_lower().contains(low)):
-				return false
-		
-		return true
+enum PlayState {
+	IDLE,
+	PLAY,
+	PAUSE,
+}
 
 
 var songs := {}
@@ -42,22 +30,70 @@ var albums := {}
 
 var inputs := {}
 var grouped_by_artists := true
-var played_once := false
-var last_focus: Control
-
-var is_playing := false:
+var last_played: Song:
 	set(value):
-		is_playing = value
+		last_played = value
 		
-		if not is_playing:
-			is_pausing = false
-			%PlayPauseResume.text = PLAY_SYMBOL
+		if value:
+			show_song(value)
+		else:
+			%SongDetailsBox.visible = false
+var last_focus: Control
+var opening_playlist_path: String
+var playing_playlist: Playlist:
+	set(value):
+		if playing_playlist != value:
+			print("DELETE_ALL")
+			
+			for item in value.root.get_children():
+				prints("APPEND", item.get_text(3))
+			
+			if playing_playlist:
+				playlists.set_tab_icon(playlists.get_children().find(playing_playlist), null)
+			
+			playlists.set_tab_icon(playlists.get_children().find(value), preload("res://src/play.svg"))
+			
+			playing_playlist = value
+var current_playlist: Playlist:
+	get: return playlists.get_current_tab_control() as Playlist
+
+
+var mute := false:
+	set(value):
+		mute = value
 		
-		%ToBegin.disabled = not value
-		%Rewind.disabled = not value
-		%FastForward.disabled = not value
-		%StopSong.disabled = not value
-var is_pausing := false
+		if is_node_ready():
+			%VolumeIcon.texture = preload("res://src/mute.svg") if mute else preload("res://src/volume.svg")
+var play_state := PlayState.IDLE:
+	set(value):
+		play_state = value
+		
+		match value:
+			PlayState.IDLE:
+				song_position = 0.0
+				%PlayPauseResume.text = PLAY_SYMBOL
+				%PlayPauseResume.disabled = last_played == null
+				%ToBegin.disabled = true
+				%Rewind.disabled = true
+				%FastForward.disabled = true
+				%StopSong.disabled = true
+				%ToEnd.disabled = true
+			
+			PlayState.PLAY:
+				%PlayPauseResume.text = PAUSE_SYMBOL
+				%ToBegin.disabled = false
+				%Rewind.disabled = false
+				%FastForward.disabled = false
+				%StopSong.disabled = false
+				%ToEnd.disabled = false
+			
+			PlayState.PAUSE:
+				%PlayPauseResume.text = PLAY_SYMBOL
+				%ToBegin.disabled = false
+				%Rewind.disabled = false
+				%FastForward.disabled = false
+				%StopSong.disabled = false
+				%ToEnd.disabled = false
 var song_duration := 0.0:
 	set(value):
 		song_duration = maxf(0, value)
@@ -71,18 +107,57 @@ var song_position := 0.0:
 		if is_node_ready() and song_duration != 0:
 			song_progress.value = song_position
 			%SongProgress/TextureRect.position.x = song_progress.size.x * song_position / song_duration - %SongProgress/TextureRect.size.x / 2
+var cache_path := "user://"
+var cache_file_path: String:
+	get: return cache_path.path_join("gui.json")
+var playlists_dir_path: String:
+	get: return cache_path.path_join("playlists")
 
 @onready var default_library_path := OS.get_environment("USERPROFILE" if OS.has_feature("windows") else "HOME").path_join("Music")
 @onready var library_path := default_library_path
 @onready var library: Tree = %Library
 @onready var treeroot: TreeItem = $Tree.create_item()
 @onready var song_progress: SongProgress = %SongProgress
+@onready var playlists: TabContainer = %Playlists/TabContainer
+
+
+const ARG_CACHE_PATH := "--cache-path="
+const ARG_SONG_PATH := "--song-path="
+const ARG_SONG_DURATION := "--song-duration="
+const ARG_SONG_POSITION := "--song-position="
+const ARG_LAST_SONG := "--last-song="
 
 
 func _ready() -> void:
 	get_tree().set_auto_accept_quit(false)
 	library.create_item()
-	Stdin.command.connect(command)
+	
+	var song_path = null
+	var state := PlayState.IDLE
+	
+	for arg in OS.get_cmdline_args():
+		if arg.begins_with(ARG_CACHE_PATH):
+			cache_path = arg.lstrip(ARG_CACHE_PATH)
+		
+		if arg.begins_with(ARG_SONG_PATH):
+			song_path = arg.lstrip(ARG_SONG_PATH)
+			state = PlayState.PLAY
+		
+		if arg.begins_with(ARG_SONG_DURATION):
+			song_duration = float(arg.lstrip(ARG_SONG_DURATION))
+		
+		if arg.begins_with(ARG_SONG_POSITION):
+			song_position = float(arg.lstrip(ARG_SONG_POSITION))
+		
+		if arg.begins_with(ARG_LAST_SONG):
+			song_path = arg.lstrip(ARG_LAST_SONG)
+		
+		if arg == "--paused":
+			play_state = PlayState.PAUSE
+	
+	song_progress.modulate = Color(0, 0, 0, 0)
+	%SongDetailsBox.visible = false
+	playlists.get_tab_bar().drag_to_rearrange_enabled = true
 	
 	if read_cache():
 		for song in songs.values():
@@ -90,15 +165,21 @@ func _ready() -> void:
 	else:
 		scan_directory(library_path)
 	
-	song_progress.modulate = Color(0, 0, 0, 0)
-	%Player.visible = false
-	is_playing = false
+	if song_path != null and songs.has(song_path):
+		last_played = songs[song_path]
+	
+	play_state = state
+	
+	if playlists.get_child_count() < 1:
+		_on_new_playlist_name_text_submitted("Default")
 	
 	$SettingsPanel/Settings.initialize(self)
 	
 	get_viewport().gui_focus_changed.connect(func (control: Control) -> void:
 		if control != %Search:
 			last_focus = control)
+	
+	Stdin.listen(self)
 
 
 func _physics_process(delta: float) -> void:
@@ -128,8 +209,8 @@ func _physics_process(delta: float) -> void:
 			
 			item.select(0)
 	
-	if Input.is_action_just_pressed(&"hide details") and played_once:
-		%Player.visible = not %Player.visible
+	if Input.is_action_just_pressed(&"hide details") and last_played:
+		%SongDetailsBox.visible = not %SongDetailsBox.visible
 	
 	if Input.is_action_just_pressed(&"hide playlists"):
 		%Playlists.visible = not %Playlists.visible
@@ -137,19 +218,19 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed(&"search"):
 		%Search.grab_focus()
 	
-	%Repeat.custom_minimum_size.x = %ControlBar.size.y
-	%Shuffle.custom_minimum_size.x = %ControlBar.size.y
+	%Repeat.custom_minimum_size.x = %Repeat.size.y
+	%Shuffle.custom_minimum_size.x = %Shuffle.size.y
 	
-	song_progress.modulate = Color(1, 1, 1, 1) if is_playing and song_duration > 0 else Color(0, 0, 0, 0)
+	song_progress.modulate = Color(1, 1, 1, 1) if play_state != PlayState.IDLE and song_duration > 0 else Color(0, 0, 0, 0)
 	
-	if is_playing and not is_pausing:
+	if play_state == PlayState.PLAY:
 		song_position += delta
 		
 		if song_duration > 0 and song_position > song_duration:
-			if %Repeat.icon == preload("res://src/repeat_one.png"):
+			if %Repeat.icon == preload("res://src/repeat_one.svg"):
 				song_position = 0
 			else:
-				is_playing = false
+				play_state = PlayState.IDLE
 
 
 func _notification(what: int) -> void:
@@ -158,31 +239,38 @@ func _notification(what: int) -> void:
 
 
 func read_cache() -> bool:
-	if FileAccess.file_exists(CACHE_FILE):
-		var file := FileAccess.open(CACHE_FILE, FileAccess.READ)
+	if FileAccess.file_exists(cache_file_path):
+		var file := FileAccess.open(cache_file_path, FileAccess.READ)
 		
 		if file:
 			var json = JSON.parse_string(file.get_as_text())
 			
 			if json:
-				var songs_dict: Dictionary = json.songs
-				
-				for path in songs_dict:
-					var song := Song.new()
-					var song_dict: Dictionary = songs_dict[path]
+				for dict in json.songs:
+					var song := Song.deserialize(dict)
 					
-					song.path = path
-					song.title = song_dict.title
-					song.artist = song_dict.artist
-					song.album = song_dict.album
-					song.lyrics = song_dict.lyrics.c_unescape()
-					
-					songs[path] = song
+					songs[song.path] = song
 				
 				library_path = json.path
 				
 				song_progress.background = json.progress_background
 				grouped_by_artists = json.grouping
+				
+				for array in json.playlists:
+					var playlist := preload("res://src/playlist.tscn").instantiate() as Playlist
+					
+					playlist.scene_root = self
+					
+					playlists.add_child(playlist)
+					playlist.deserialize(array)
+				
+				var pn := json.playlists_names as Array
+				
+				for i in range(pn.size()):
+					playlists.set_tab_title(i, pn[i])
+				
+				playlists.current_tab = json.focused_playlist
+				playing_playlist = playlists.get_child(json.playing_playlist)
 				
 				return true
 	
@@ -190,28 +278,43 @@ func read_cache() -> bool:
 
 
 func save_cache() -> void:
-	FileAccess.open(CACHE_FILE, FileAccess.WRITE).store_string(JSON.stringify({
+	FileAccess.open(cache_file_path, FileAccess.WRITE).store_string(JSON.stringify({
 		songs = serialize_songs(),
 		path = library_path,
 		progress_background = song_progress.background,
 		grouping = grouped_by_artists,
+		focused_playlist = playlists.current_tab,
+		playing_playlist = playlists.get_children().find(playing_playlist),
+		playlists = serialize_playlists(),
+		playlists_names = playlists_names(),
 	}, "\t"))
 
 
-func serialize_songs() -> Dictionary:
-	var dict := {}
+func serialize_songs() -> Array[Dictionary]:
+	var array: Array[Dictionary] = []
 	
-	for path in songs:
-		var song := songs[path] as Song
-		
-		dict[path] = {
-			title = song.title,
-			artist = song.artist,
-			album = song.album,
-			lyrics = song.lyrics.c_escape(),
-		}
+	for song in songs:
+		array.append(songs[song].serialize())
 	
-	return dict
+	return array
+
+
+func serialize_playlists() -> Array[Array]:
+	var array: Array[Array] = []
+	
+	for playlist in playlists.get_children():
+		array.append(playlist.serialize())
+	
+	return array
+
+
+func playlists_names() -> Array[String]:
+	var array: Array[String] = []
+	
+	for i in range(playlists.get_tab_count()):
+		array.append(playlists.get_tab_title(i))
+	
+	return array
 
 
 func scan_directory(path: String) -> void:
@@ -346,18 +449,18 @@ func add_song(song: Song) -> void:
 			else get_album_artist(get_album(song.album), song.artist))
 		
 		item.set_text(0, song.title)
-		item.add_button(0, preload("res://src/small-icon.svg"))
+		item.add_button(0, preload("res://src/small_plus.svg"))
 		item.set_meta(&"songres", song)
 		item.set_tooltip_text(0, song.path)
 		
 		reparent_item(item, parent)
 
 
-func read_tags(args: PackedStringArray) -> void:
+func read_tags(args: String) -> void:
 	var mode := TagMode.NONE
 	var song := Song.new()
 	
-	for section in args:
+	for section in args.split(Stdin.DELIMETER):
 		if mode == TagMode.NONE:
 			match section:
 				"TAGOF":
@@ -398,7 +501,7 @@ func read_tags(args: PackedStringArray) -> void:
 
 
 func command(string: String) -> void:
-	var args := string.split(Stdin.DELIMETER)
+	var args := string.split(Stdin.DELIMETER, false, 2)
 	
 	match args[0]:
 		"EXIT":
@@ -406,7 +509,12 @@ func command(string: String) -> void:
 			get_tree().quit()
 		
 		"TAGOF":
-			read_tags(args)
+			read_tags(string)
+		
+		"PLAY":
+			last_played = songs[args[1]]
+			song_position = 0
+			play_state = PlayState.PLAY
 		
 		"VOLUME":
 			var volume := float(args[1]) * 100
@@ -414,22 +522,32 @@ func command(string: String) -> void:
 			%VolumeLabel.text = str(roundi(volume)) + "%"
 			%Volume.value = 100 - volume
 		
+		"MUTE":
+			mute = true
+		
+		"UNMUTE":
+			mute = false
+		
 		"DURATION":
 			song_duration = float(args[1])
 		
 		"REPEAT":
 			match args[1]:
 				"none":
-					%Repeat.icon = preload("res://src/no_repeat.png")
+					%Repeat.icon = preload("res://src/no_repeat.svg")
 					%Repeat.tooltip_text = "No repeat (Toggle to repeat all songs in playlist)"
 				
 				"all":
-					%Repeat.icon = preload("res://src/repeat.png")
+					%Repeat.icon = preload("res://src/repeat.svg")
 					%Repeat.tooltip_text = "Repeat all songs in playlist (Toggle to repeat one song infinitely)"
 				
 				"one":
-					%Repeat.icon = preload("res://src/repeat_one.png")
-					%Repeat.tooltip_text = "Repeat one song infinitely (Toggle to disable repeating)"
+					%Repeat.icon = preload("res://src/repeat_one.svg")
+					%Repeat.tooltip_text = "Repeat one song infinitely (Toggle to stop after every song)"
+				
+				"stop":
+					%Repeat.icon = preload("res://src/stop.svg")
+					%Repeat.tooltip_text = "Stop after every song is finished (Toggle to disable repeating)"
 		
 		"SHUFFLE":
 			%Shuffle.icon = SHUFFLE
@@ -438,15 +556,13 @@ func command(string: String) -> void:
 			%Shuffle.icon = NO_SHUFFLE
 		
 		"RESUME":
-			%PlayPauseResume.text = PAUSE_SYMBOL
-			is_pausing = false
+			play_state = PlayState.PLAY
 		
 		"PAUSE":
-			%PlayPauseResume.text = PLAY_SYMBOL
-			is_pausing = true
+			play_state = PlayState.PAUSE
 		
 		"STOP":
-			is_playing = false
+			play_state = PlayState.IDLE
 		
 		"REWIND":
 			song_position -= float(args[1])
@@ -455,20 +571,21 @@ func command(string: String) -> void:
 			song_position += float(args[1])
 
 
-func play_song(song: Song) -> void:
-	prints("PLAY", song.path)
-	
-	%Player.visible = true
+func show_song(song: Song) -> void:
+	%SongDetailsBox.visible = true
 	%Title.text = song.title
 	%Artist.text = "" if song.artist == "No Artist" else song.artist
 	%TitleArtistConnector.visible = not %Artist.text.is_empty()
 	%Album.text = "" if song.album == "No Album" else song.album
 	%Lyrics.text = "" if song.lyrics == "No Lyrics" else song.lyrics
-	%PlayPauseResume.text = PAUSE_SYMBOL
+
+
+func play_song(index: int) -> void:
+	prints("PLAY", index)
 	
-	played_once = true
-	is_playing = true
-	song_position = 0.0
+	song_position = 0
+	last_played = songs[current_playlist.root.get_child(index).get_text(3)] as Song
+	play_state = PlayState.PLAY
 
 
 func _on_library_item_activated() -> void:
@@ -476,7 +593,14 @@ func _on_library_item_activated() -> void:
 	var song := get_song(item)
 	
 	if song:
-		play_song(song)
+		if Input.is_action_pressed(&"silent_add"):
+			current_playlist.add_song(song)
+		else:
+			var index := current_playlist.root.get_child_count()
+			
+			playing_playlist = current_playlist
+			current_playlist.add_song(song)
+			play_song(index)
 	else:
 		item.collapsed = !item.collapsed
 
@@ -501,14 +625,18 @@ func _on_reload_library_pressed() -> void:
 
 
 func _on_play_pause_resume_pressed() -> void:
-	if is_playing:
-		is_pausing = not is_pausing
+	match play_state:
+		PlayState.IDLE:
+			play_state = PlayState.PLAY
+			print("REPLAY")
 		
-		print("PAUSE" if is_pausing else "RESUME")
+		PlayState.PLAY:
+			play_state = PlayState.PAUSE
+			print("PAUSE")
 		
-		%PlayPauseResume.text = PLAY_SYMBOL if is_pausing else PAUSE_SYMBOL
-	else:
-		pass
+		PlayState.PAUSE:
+			play_state = PlayState.PLAY
+			print("RESUME")
 
 
 func _on_repeat_pressed() -> void:
@@ -553,8 +681,8 @@ func _on_close_app_pressed() -> void:
 
 
 func _on_stop_song_pressed() -> void:
+	play_state = PlayState.IDLE
 	print("STOP")
-	is_playing = false
 
 
 func _on_library_gui_input(event: InputEvent) -> void:
@@ -563,6 +691,13 @@ func _on_library_gui_input(event: InputEvent) -> void:
 			$LibraryGroup.set_item_checked(0, grouped_by_artists)
 			$LibraryGroup.set_item_checked(1, not grouped_by_artists)
 			$LibraryGroup.popup(Rect2i(get_local_mouse_position(), Vector2.ZERO))
+	
+	if event is InputEventWithModifiers:
+		if event.is_action_pressed(&"ui_accept") and event.shift_pressed:
+			var item := library.get_selected()
+			
+			if item:
+				current_playlist.add_song(get_song(item))
 
 
 func _on_library_group_id_pressed(id: int) -> void:
@@ -593,3 +728,132 @@ func _on_search_text_changed(_new_text: String) -> void:
 func _on_search_text_submitted(_new_text: String) -> void:
 	if last_focus:
 		last_focus.grab_focus()
+
+
+func _on_new_playlist_pressed() -> void:
+	$NewPlaylistDialog.popup_centered()
+	$NewPlaylistDialog/NewPlaylistName.text = ""
+	$NewPlaylistDialog/NewPlaylistName.grab_focus()
+
+
+func _on_delete_playlist_pressed() -> void:
+	if playlists.get_child_count() > 1:
+		if playing_playlist == current_playlist:
+			print("DELETE_ALL")
+		
+		current_playlist.queue_free()
+
+
+func _on_new_playlist_name_text_submitted(new_text: String) -> void:
+	var playlist := preload("res://src/playlist.tscn").instantiate() as Playlist
+	var index := playlists.get_child_count()
+	
+	playlist.scene_root = self
+	playlists.add_child(playlist)
+	playlists.set_tab_title(index, new_text)
+	playlists.current_tab = index
+	
+	_on_new_playlist_dialog_close_requested()
+
+
+func _on_new_playlist_dialog_confirmed() -> void:
+	_on_new_playlist_name_text_submitted($NewPlaylistDialog/NewPlaylistName.text)
+
+
+func _on_new_playlist_dialog_close_requested() -> void:
+	$NewPlaylistDialog.visible = false
+
+
+func _on_playlist_name_text_submitted(new_text: String) -> void:
+	playlists.set_tab_title(playlists.current_tab, new_text)
+	_on_rename_playlist_dialog_close_requested()
+
+
+func _on_rename_playlist_dialog_confirmed() -> void:
+	_on_playlist_name_text_submitted($RenamePlaylistDialog/PlaylistName.text)
+
+
+func _on_rename_playlist_dialog_close_requested() -> void:
+	$RenamePlaylistDialog.visible = false
+
+
+func _on_rename_playlist_pressed() -> void:
+	$RenamePlaylistDialog.popup_centered()
+	$RenamePlaylistDialog/PlaylistName.text = ""
+	$RenamePlaylistDialog/PlaylistName.grab_focus()
+
+
+func _on_save_playlist_pressed() -> void:
+	$SavePlaylistDialog.popup_centered()
+
+
+func _on_save_playlist_dialog_file_selected(path: String) -> void:
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	
+	if file:
+		file.store_string(JSON.stringify(current_playlist.serialize(), '\t'))
+
+
+func _on_open_playlist_dialog_file_selected(path: String) -> void:
+	opening_playlist_path = path
+	$ImportPlaylistNameDialog.popup_centered()
+	$ImportPlaylistNameDialog/ImportPlaylistName.text = ""
+	$ImportPlaylistNameDialog/ImportPlaylistName.grab_focus()
+
+
+func _on_open_playlist_pressed() -> void:
+	$OpenPlaylistDialog.popup_centered()
+
+
+func _on_import_playlist_name_text_submitted(new_text: String) -> void:
+	var file := FileAccess.open(opening_playlist_path, FileAccess.READ)
+	
+	if file:
+		var json = JSON.parse_string(file.get_as_text())
+		
+		if json:
+			var playlist := preload("res://src/playlist.tscn").instantiate() as Playlist
+			var index := playlists.get_child_count()
+			
+			playlist.scene_root = self
+			
+			playlists.add_child(playlist)
+			playlists.set_tab_title(index, new_text)
+			playlists.current_tab = index
+			
+			playlist.deserialize(json)
+			
+			_on_import_playlist_name_dialog_close_requested()
+
+
+func _on_import_playlist_name_dialog_confirmed() -> void:
+	_on_import_playlist_name_text_submitted($ImportPlaylistNameDialog/ImportPlaylistName.text)
+
+
+func _on_import_playlist_name_dialog_close_requested() -> void:
+	$ImportPlaylistNameDialog.visible = false
+
+
+func _on_previous_song_pressed() -> void:
+	play_state = PlayState.IDLE
+	print("PREV")
+
+
+func _on_to_end_pressed() -> void:
+	play_state = PlayState.IDLE
+	print("SKIP")
+
+
+func _on_library_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_index: int) -> void:
+	current_playlist.add_song(get_song(item))
+
+
+func _on_volume_icon_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		if event.pressed:
+			if %VolumeIcon.texture == preload("res://src/mute.svg"):
+				mute = false
+				print("UNMUTE")
+			else:
+				mute = true
+				print("MUTE")

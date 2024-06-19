@@ -1,17 +1,22 @@
-[gd_scene load_steps=31 format=3 uid="uid://b81u1c55uki6f"]
+[gd_scene load_steps=42 format=3 uid="uid://b81u1c55uki6f"]
 
 [ext_resource type="Script" path="res://src/root.gd" id="1_21msl"]
 [ext_resource type="FontFile" uid="uid://c2bj8wx8rbb76" path="res://src/InterTight-VariableFont_wght.ttf" id="1_b7wi4"]
 [ext_resource type="FontFile" uid="uid://b3q82j6u0njhn" path="res://src/Everson Mono.ttf" id="1_t6ide"]
 [ext_resource type="Texture2D" uid="uid://d4misdx7d6u8c" path="res://src/icon.svg" id="2_8nwv5"]
-[ext_resource type="Texture2D" uid="uid://dotq3tixjvymo" path="res://src/Speaker_Icon.svg.png" id="3_mxx5r"]
 [ext_resource type="Script" path="res://src/volume.gd" id="4_4f0bk"]
 [ext_resource type="Texture2D" uid="uid://n0nl17yib76k" path="res://src/search.png" id="4_fa8re"]
-[ext_resource type="Texture2D" uid="uid://chw4vn7j0ldin" path="res://src/repeat.png" id="6_08qgn"]
+[ext_resource type="Texture2D" uid="uid://dcs7smn7sadis" path="res://src/rename.svg" id="6_6k6bg"]
+[ext_resource type="Texture2D" uid="uid://c4hfe1oxgr2ry" path="res://src/open.svg" id="6_bb4w2"]
 [ext_resource type="Texture2D" uid="uid://bi8eq56dy7vlo" path="res://src/progress_circle.png" id="6_h50mn"]
+[ext_resource type="Texture2D" uid="uid://cfbfxcjhtlnbu" path="res://src/plus.svg" id="6_lg5mx"]
+[ext_resource type="Texture2D" uid="uid://7ml16tcersji" path="res://src/save.svg" id="7_18uru"]
 [ext_resource type="Texture2D" uid="uid://m0707gni8b1c" path="res://src/shuffle.png" id="7_gk0bi"]
 [ext_resource type="Script" path="res://src/progress.gd" id="7_r6b18"]
+[ext_resource type="Texture2D" uid="uid://dj35ysaddo1ty" path="res://src/close.svg" id="8_pgjqf"]
 [ext_resource type="PackedScene" uid="uid://3t5vyoah711r" path="res://src/settings.tscn" id="13_eldab"]
+[ext_resource type="Texture2D" uid="uid://co7obo2c4d7rk" path="res://src/repeat.svg" id="13_kcn7q"]
+[ext_resource type="Texture2D" uid="uid://kt0mncs1w66" path="res://src/volume.svg" id="15_a48rs"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1r2kf"]
 bg_color = Color(0, 0, 0, 0)
@@ -20,6 +25,16 @@ border_width_bottom = 1
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ntp3s"]
 bg_color = Color(0, 0, 0, 1)
 
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_kgojd"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_21j7e"]
+bg_color = Color(0.2484, 0.2484, 0.2484, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_d0rqa"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4ptin"]
+bg_color = Color(0.497474, 0.497474, 0.497474, 1)
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cvgaj"]
 bg_color = Color(0, 0, 0, 0)
 border_width_left = 1
@@ -27,6 +42,18 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.498039, 0.498039, 0.498039, 0.498039)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_y2p2e"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fir5g"]
+bg_color = Color(0.2484, 0.2484, 0.2484, 1)
+border_width_left = 16
+border_width_right = 16
+border_color = Color(0.247059, 0.247059, 0.247059, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cxqju"]
 bg_color = Color(0, 0, 0, 0)
@@ -34,22 +61,22 @@ border_width_left = 16
 border_width_right = 16
 border_color = Color(0, 0, 0, 0)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fir5g"]
-bg_color = Color(0.2484, 0.2484, 0.2484, 1)
-border_width_left = 16
-border_width_right = 16
-border_color = Color(0.2484, 0.2484, 0.2484, 1)
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hqfqr"]
 bg_color = Color(0.497474, 0.497474, 0.497474, 1)
 border_width_left = 16
 border_width_right = 16
-border_color = Color(0.497474, 0.497474, 0.497473, 1)
+border_color = Color(0.498039, 0.498039, 0.498039, 1)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_r0hw6"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ecv6u"]
 bg_color = Color(0.258708, 0.606157, 1, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_njlqp"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hqr3e"]
 bg_color = Color(0.247059, 0.247059, 0.247059, 1)
@@ -102,12 +129,17 @@ LineEdit/styles/normal = SubResource("StyleBoxFlat_1r2kf")
 Lyrics/base_type = &"Label"
 Lyrics/font_sizes/font_size = 16
 Panel/styles/panel = SubResource("StyleBoxFlat_ntp3s")
+PlaylistControl/base_type = &"Button"
+PlaylistControl/styles/disabled = SubResource("StyleBoxEmpty_kgojd")
+PlaylistControl/styles/hover = SubResource("StyleBoxFlat_21j7e")
+PlaylistControl/styles/normal = SubResource("StyleBoxEmpty_d0rqa")
+PlaylistControl/styles/pressed = SubResource("StyleBoxFlat_4ptin")
 ProgressBackground/base_type = &"Panel"
 ProgressBackground/styles/panel = SubResource("StyleBoxFlat_cvgaj")
 SongControl/base_type = &"Button"
 SongControl/font_sizes/font_size = 48
 SongControl/fonts/font = ExtResource("1_t6ide")
-SongControl/styles/disabled = SubResource("StyleBoxFlat_cxqju")
+SongControl/styles/disabled = SubResource("StyleBoxEmpty_y2p2e")
 SongControl/styles/focus = null
 SongControl/styles/hover = SubResource("StyleBoxFlat_fir5g")
 SongControl/styles/normal = SubResource("StyleBoxFlat_cxqju")
@@ -115,6 +147,7 @@ SongControl/styles/pressed = SubResource("StyleBoxFlat_hqfqr")
 SongProgress/base_type = &"ProgressBar"
 SongProgress/styles/background = SubResource("StyleBoxEmpty_r0hw6")
 SongProgress/styles/fill = SubResource("StyleBoxFlat_ecv6u")
+TabContainer/styles/panel = SubResource("StyleBoxEmpty_njlqp")
 Title/base_type = &"Label"
 Title/font_sizes/font_size = 32
 Title/fonts/font = ExtResource("1_b7wi4")
@@ -229,67 +262,113 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="TestPrint" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists"]
-unique_name_in_owner = true
+[node name="TabContainer" type="TabContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists"]
 layout_mode = 2
+size_flags_vertical = 3
+drag_to_rearrange_enabled = true
 
-[node name="Player" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists"]
+layout_mode = 2
+alignment = 2
+
+[node name="NewPlaylist" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+tooltip_text = "Create new playlist"
+theme_type_variation = &"PlaylistControl"
+icon = ExtResource("6_lg5mx")
+expand_icon = true
+
+[node name="RenamePlaylist" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+tooltip_text = "Rename playlist"
+theme_type_variation = &"PlaylistControl"
+icon = ExtResource("6_6k6bg")
+expand_icon = true
+
+[node name="OpenPlaylist" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+tooltip_text = "Import playlist"
+theme_type_variation = &"PlaylistControl"
+icon = ExtResource("6_bb4w2")
+expand_icon = true
+
+[node name="SavePlaylist" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+tooltip_text = "Export playlist"
+theme_type_variation = &"PlaylistControl"
+icon = ExtResource("7_18uru")
+expand_icon = true
+
+[node name="DeletePlaylist" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+tooltip_text = "Remove playlist"
+theme_type_variation = &"PlaylistControl"
+icon = ExtResource("8_pgjqf")
+expand_icon = true
+
+[node name="SongDetailsBox" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player"]
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/SongDetailsBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Details" type="ScrollContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player/VBoxContainer"]
+[node name="Details" type="ScrollContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/SongDetailsBox/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 vertical_scroll_mode = 0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player/VBoxContainer/Details"]
+[node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/SongDetailsBox/VBoxContainer/Details"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Title" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player/VBoxContainer/Details/HBoxContainer"]
+[node name="Title" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/SongDetailsBox/VBoxContainer/Details/HBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Title"
 text = "test"
 max_lines_visible = 1
 
-[node name="TitleArtistConnector" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player/VBoxContainer/Details/HBoxContainer"]
+[node name="TitleArtistConnector" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/SongDetailsBox/VBoxContainer/Details/HBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"TitleArtist"
 text = "by"
 
-[node name="Artist" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player/VBoxContainer/Details/HBoxContainer"]
+[node name="Artist" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/SongDetailsBox/VBoxContainer/Details/HBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Artist"
 text = "test"
 
-[node name="Album" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player/VBoxContainer"]
+[node name="Album" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/SongDetailsBox/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Album"
 text = "test"
 max_lines_visible = 1
 
-[node name="AlbumImage" type="TextureRect" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player/VBoxContainer"]
+[node name="AlbumImage" type="TextureRect" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/SongDetailsBox/VBoxContainer"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 size_flags_vertical = 3
 texture = ExtResource("2_8nwv5")
 stretch_mode = 4
 
-[node name="ScrollContainer" type="ScrollContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player"]
+[node name="ScrollContainer" type="ScrollContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/SongDetailsBox"]
 custom_minimum_size = Vector2(256, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Lyrics" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Player/ScrollContainer"]
+[node name="Lyrics" type="Label" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/SongDetailsBox/ScrollContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Lyrics"
@@ -297,6 +376,7 @@ theme_type_variation = &"Lyrics"
 [node name="SongProgress" type="ProgressBar" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
 unique_name_in_owner = true
 process_mode = 3
+z_index = 1
 custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
 focus_mode = 1
@@ -306,6 +386,7 @@ show_percentage = false
 script = ExtResource("7_r6b18")
 
 [node name="Panel" type="Panel" parent="HBoxContainer/HSplitContainer/VBoxContainer/SongProgress"]
+z_index = -1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -339,7 +420,7 @@ alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"SongControl"
-icon = ExtResource("6_08qgn")
+icon = ExtResource("13_kcn7q")
 expand_icon = true
 
 [node name="PreviousSong" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
@@ -411,19 +492,20 @@ layout_mode = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="HBoxContainer"]
 layout_mode = 2
-theme_override_constants/margin_left = 32
+theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 32
-theme_override_constants/margin_right = 32
+theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 32
 
 [node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/MarginContainer"]
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="TextureRect" type="TextureRect" parent="HBoxContainer/MarginContainer/VBoxContainer"]
+[node name="VolumeIcon" type="TextureRect" parent="HBoxContainer/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-texture = ExtResource("3_mxx5r")
+texture = ExtResource("15_a48rs")
 expand_mode = 2
 stretch_mode = 5
 
@@ -488,23 +570,113 @@ item_1/text = "Group by album"
 item_1/checkable = 2
 item_1/id = 1
 
+[node name="NewPlaylistDialog" type="ConfirmationDialog" parent="."]
+title = "New playlist"
+dialog_hide_on_ok = false
+
+[node name="NewPlaylistName" type="LineEdit" parent="NewPlaylistDialog"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -49.0
+grow_horizontal = 2
+grow_vertical = 2
+placeholder_text = "New playlist name"
+
+[node name="RenamePlaylistDialog" type="ConfirmationDialog" parent="."]
+title = "Rename playlist"
+dialog_hide_on_ok = false
+
+[node name="PlaylistName" type="LineEdit" parent="RenamePlaylistDialog"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -49.0
+grow_horizontal = 2
+grow_vertical = 2
+placeholder_text = "New playlist name"
+
+[node name="PlaylistSelector" type="FileDialog" parent="."]
+title = "Open File(s)"
+ok_button_text = "Open"
+file_mode = 1
+access = 2
+filters = PackedStringArray("*.playlist.json ; Playlist JSON")
+use_native_dialog = true
+
+[node name="OpenPlaylistDialog" type="FileDialog" parent="."]
+title = "Open a File"
+size = Vector2i(489, 159)
+ok_button_text = "Open"
+file_mode = 0
+access = 2
+filters = PackedStringArray("*.playlist.json ; Playlist JSON")
+use_native_dialog = true
+
+[node name="ImportPlaylistNameDialog" type="ConfirmationDialog" parent="."]
+title = "Import playlist"
+dialog_hide_on_ok = false
+
+[node name="ImportPlaylistName" type="LineEdit" parent="ImportPlaylistNameDialog"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -49.0
+grow_horizontal = 2
+grow_vertical = 2
+placeholder_text = "Playlist name"
+
+[node name="SavePlaylistDialog" type="FileDialog" parent="."]
+access = 2
+filters = PackedStringArray("*.playlist.json ; Playlist JSON")
+use_native_dialog = true
+
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer2/Settings" to="." method="_on_settings_pressed"]
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer2/ReloadLibrary" to="." method="_on_reload_library_pressed"]
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer2/CloseApp" to="." method="_on_close_app_pressed"]
 [connection signal="text_changed" from="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer/Search" to="." method="_on_search_text_changed"]
 [connection signal="text_submitted" from="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer/Search" to="." method="_on_search_text_submitted"]
+[connection signal="button_clicked" from="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/Library" to="." method="_on_library_button_clicked"]
 [connection signal="gui_input" from="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/Library" to="." method="_on_library_gui_input"]
 [connection signal="item_activated" from="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/Library" to="." method="_on_library_item_activated"]
 [connection signal="item_selected" from="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/Library" to="." method="_on_library_item_selected"]
+[connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer/NewPlaylist" to="." method="_on_new_playlist_pressed"]
+[connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer/RenamePlaylist" to="." method="_on_rename_playlist_pressed"]
+[connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer/OpenPlaylist" to="." method="_on_open_playlist_pressed"]
+[connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer/SavePlaylist" to="." method="_on_save_playlist_pressed"]
+[connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer/DeletePlaylist" to="." method="_on_delete_playlist_pressed"]
 [connection signal="mouse_entered" from="HBoxContainer/HSplitContainer/VBoxContainer/SongProgress" to="HBoxContainer/HSplitContainer/VBoxContainer/SongProgress" method="_on_mouse_entered"]
 [connection signal="mouse_exited" from="HBoxContainer/HSplitContainer/VBoxContainer/SongProgress" to="HBoxContainer/HSplitContainer/VBoxContainer/SongProgress" method="_on_mouse_exited"]
 [connection signal="seek" from="HBoxContainer/HSplitContainer/VBoxContainer/SongProgress" to="." method="_on_song_progress_seek"]
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/Repeat" to="." method="_on_repeat_pressed"]
+[connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/PreviousSong" to="." method="_on_previous_song_pressed"]
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/ToBegin" to="." method="_on_to_begin_pressed"]
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/Rewind" to="." method="_on_rewind_pressed"]
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/PlayPauseResume" to="." method="_on_play_pause_resume_pressed"]
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/FastForward" to="." method="_on_fast_forward_pressed"]
+[connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/ToEnd" to="." method="_on_to_end_pressed"]
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/StopSong" to="." method="_on_stop_song_pressed"]
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/Shuffle" to="." method="_on_shuffle_pressed"]
+[connection signal="gui_input" from="HBoxContainer/MarginContainer/VBoxContainer/VolumeIcon" to="." method="_on_volume_icon_gui_input"]
 [connection signal="close" from="SettingsPanel/Settings" to="." method="_on_settings_close"]
 [connection signal="id_pressed" from="LibraryGroup" to="." method="_on_library_group_id_pressed"]
+[connection signal="close_requested" from="NewPlaylistDialog" to="." method="_on_new_playlist_dialog_close_requested"]
+[connection signal="confirmed" from="NewPlaylistDialog" to="." method="_on_new_playlist_dialog_confirmed"]
+[connection signal="text_submitted" from="NewPlaylistDialog/NewPlaylistName" to="." method="_on_new_playlist_name_text_submitted"]
+[connection signal="close_requested" from="RenamePlaylistDialog" to="." method="_on_rename_playlist_dialog_close_requested"]
+[connection signal="confirmed" from="RenamePlaylistDialog" to="." method="_on_rename_playlist_dialog_confirmed"]
+[connection signal="text_submitted" from="RenamePlaylistDialog/PlaylistName" to="." method="_on_playlist_name_text_submitted"]
+[connection signal="file_selected" from="OpenPlaylistDialog" to="." method="_on_open_playlist_dialog_file_selected"]
+[connection signal="close_requested" from="ImportPlaylistNameDialog" to="." method="_on_import_playlist_name_dialog_close_requested"]
+[connection signal="confirmed" from="ImportPlaylistNameDialog" to="." method="_on_import_playlist_name_dialog_confirmed"]
+[connection signal="text_submitted" from="ImportPlaylistNameDialog/ImportPlaylistName" to="." method="_on_import_playlist_name_text_submitted"]
+[connection signal="file_selected" from="SavePlaylistDialog" to="." method="_on_save_playlist_dialog_file_selected"]

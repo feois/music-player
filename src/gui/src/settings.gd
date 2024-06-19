@@ -14,6 +14,10 @@ const PROGRESS_BACKGROUNDS := [
 var root: Root
 
 
+func _process(_delta: float) -> void:
+	%LibraryPathOpen.custom_minimum_size.x = %LibraryPathOpen.size.y
+
+
 func initialize(r: Root) -> void:
 	root = r
 	
