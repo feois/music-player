@@ -6,6 +6,7 @@ pub use std::time::SystemTime as Time;
 use crate::BooleanConditional;
 
 
+#[derive(PartialEq, Eq)]
 struct KeyCombination(HashSet<Key>);
 
 impl KeyCombination {
@@ -22,11 +23,6 @@ impl KeyCombination {
     #[inline(always)]
     pub fn remove(&mut self, key: Key) {
         self.0.remove(&key);
-    }
-    
-    #[inline(always)]
-    pub fn includes(&self, comb: &KeyCombination) -> bool {
-        self.0.is_superset(&comb.0)
     }
 }
 
@@ -135,7 +131,7 @@ impl EventListener {
         for (comb, duration, t, flag) in &mut self.combinations {
             let overtime = !t.is_some_and(|t| now - t < *duration);
             
-            *flag = self.keys.includes(comb).elsedo(|| { t.take(); }) && overtime.ifdo(|| { t.replace(now); });
+            *flag = (&self.keys == comb).elsedo(|| { t.take(); }) && overtime.ifdo(|| { t.replace(now); });
         }
     }
     
