@@ -57,7 +57,7 @@ fn arg(arg_name: &str, argument: impl AsRef<OsStr>) -> OsString {
 #[inline(always)]
 fn show_notification(content: impl AsRef<str>) {
     if let Some(e) = Notification::new().body(content.as_ref()).show().err() {
-        println!("ERROR: Failed to show notification {}", e);
+        println!("RUST-ERROR: Failed to show notification {}", e);
     }
 }
 
@@ -194,6 +194,8 @@ impl App {
             
             if self.stop_next {
                 self.stop_next = false;
+                
+                println!("STATUS: Idle");
             }
             else {
                 self.poll();
@@ -219,7 +221,7 @@ impl App {
                 "RESUME" => self.player.resume(),
                 "MUTE" => { self.player.mute = true; self.player.update_volume() }
                 "UNMUTE" => { self.player.mute = false; self.player.update_volume() }
-                "VOLUME" => if let Some(e) = args.parse().map(|v| self.volume(v, false)).err() { println!("ERROR: Cannot parse volume {}", e) }
+                "VOLUME" => if let Some(e) = args.parse().map(|v| self.volume(v, false)).err() { println!("RUST-ERROR: Cannot parse volume {}", e) }
                 "VOLINC" => self.volume(self.player.volume + self.volume_step, true),
                 "VOLDEC" => self.volume(self.player.volume - self.volume_step, true),
                 "APPEND" => self.playlist.append(args.to_string()),
@@ -233,7 +235,7 @@ impl App {
                 "INFO" => println!("GODOT-PRINT: {}", args),
                 "REWIND" => self.rewind(),
                 "FAST_FORWARD" => self.fast_forward(),
-                "SEEK" => if let Some(e) = args.parse().map(|d| self.player.seek(Duration::from_secs_f64(d))).err() { println!("ERROR: Cannot seek {} {}", args, e) }
+                "SEEK" => if let Some(e) = args.parse().map(|d| self.player.seek(Duration::from_secs_f64(d))).err() { println!("RUST-ERROR: Cannot seek {} {}", args, e) }
                 "EXIT" => close = true,
                 "EXIT_ALL" => return true,
                 _ => println!("GODOT: {}", command),
@@ -388,7 +390,7 @@ impl App {
                     "Lyrics", tag.lyrics().find(|lyrics| lyrics.lang == "eng").map(|lyrics| lyrics.text.as_str()).filter(|s| !s.is_empty()).unwrap_or("No Lyrics"),
                 ]);
             }
-            Err(e) => println!("ERROR: Cannot read tag from {} ({})", path, e)
+            Err(e) => println!("RUST-ERROR: Cannot read tag from {} ({})", path, e)
         }
     }
     
@@ -430,6 +432,9 @@ impl App {
     fn poll(&mut self) {
         if let Some(song) = self.playlist.poll().map(str::to_string) {
             self.play(&song);
+        }
+        else {
+            println!("STATUS: Idle");
         }
     }
 }

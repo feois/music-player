@@ -70,6 +70,8 @@ impl Player {
                     println!("Failed to play song {:?}", e)
                 }
                 else {
+                    println!("TASK: Playing song {}", path);
+                    
                     self.resume();
                     self.state = PlayerState::Play;
                 }
@@ -80,6 +82,8 @@ impl Player {
     
     #[inline(always)]
     pub fn stop(&mut self) {
+        println!("TASK: Stopping");
+        
         self.player.stop();
         
         if let PlayerState::Finished = self.state {}
@@ -88,6 +92,8 @@ impl Player {
     
     #[inline(always)]
     pub fn skip(&mut self) {
+        println!("TASK: Skipping current song");
+        
         self.player.stop();
         
         if let PlayerState::Idle = self.state {}
@@ -96,6 +102,8 @@ impl Player {
     
     #[inline(always)]
     pub fn pause(&mut self) {
+        println!("TASK: Pausing");
+        
         self.player.set_playing(false);
         
         if let PlayerState::Play = self.state {
@@ -105,6 +113,8 @@ impl Player {
     
     #[inline(always)]
     pub fn resume(&mut self) {
+        println!("TAsK: Resuming");
+        
         self.player.set_playing(true);
         
         if let PlayerState::Pause = self.state {

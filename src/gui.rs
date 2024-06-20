@@ -38,7 +38,7 @@ impl GUI {
                             break;
                         }
                     }
-                    Err(e) => { println!("ERROR: GUI output {}", e); break }
+                    Err(e) => { println!("RUST-ERROR: GUI output {}", e); break }
                 }
                 
                 buffer.clear();
@@ -124,7 +124,7 @@ impl GUI {
                         println!("INFO: GUI has not closed yet, waiting {}", i + 1);
                     }
                     
-                    println!("ERROR: Failed to close GUI");
+                    println!("RUST-ERROR: Failed to close GUI");
                     println!("TASK: Killing GUI");
                     
                     self.process.kill().expect("Failed to kill");

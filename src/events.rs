@@ -106,7 +106,7 @@ impl EventListener {
     pub fn listen() -> Self {
         let (s, r) = channel();
         
-        thread::spawn(|| rdev::listen(move |e| s.send(e).err().map(|e| println!("ERROR: Listener dropped {}", e)).unwrap_or(())).expect("Failed to listen"));
+        thread::spawn(|| rdev::listen(move |e| s.send(e).err().map(|e| println!("RUST-ERROR: Listener dropped {}", e)).unwrap_or(())).expect("Failed to listen"));
         
         Self {
             receiver: r,
