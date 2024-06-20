@@ -178,9 +178,9 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	var selected := library.get_selected()
+	var tree := library if library.has_focus() else (current_playlist if current_playlist.has_focus() else null)
 	
-	if selected && library.has_focus():
+	if tree && tree.get_selected():
 		var p := input(&"prev")
 		var n := input(&"next")
 		
@@ -188,19 +188,19 @@ func _physics_process(delta: float) -> void:
 			var item: TreeItem
 			
 			if p:
-				item = library.get_selected().get_prev_visible()
+				item = tree.get_selected().get_prev_visible()
 				
 				if !item:
-					item = library.get_root()
+					item = tree.get_root()
 					
 					while item.get_child_count() > 0:
 						item = item.get_child(item.get_child_count() - 1)
 			
 			if n:
-				item = library.get_selected().get_next_visible()
+				item = tree.get_selected().get_next_visible()
 				
 				if !item:
-					item = library.get_root().get_first_child()
+					item = tree.get_root().get_first_child()
 			
 			item.select(0)
 	
@@ -428,10 +428,6 @@ func get_album_artist(album: TreeItem, artist: String) -> TreeItem:
 	return item
 
 
-func get_song(item: TreeItem) -> Song:
-	return item.get_meta(&"songres") as Song if item.has_meta(&"songres") else null
-
-
 func add_song(song: Song) -> void:
 	if %Search.text.is_empty() or song.filter(%Search.text):
 		var item := treeroot.create_child()
@@ -442,7 +438,10 @@ func add_song(song: Song) -> void:
 		
 		item.set_text(0, song.title)
 		item.add_button(0, preload("res://src/small_plus.svg"))
-		item.set_meta(&"songres", song)
+		item.set_button_tooltip_text(0, 0, "Add to the current playlist")
+		item.add_button(0, preload("res://src/play.svg"))
+		item.set_button_tooltip_text(0, 1, "Add to the current playlist and play it")
+		item.set_meta(&"song", song)
 		item.set_tooltip_text(0, song.path)
 		
 		reparent_item(item, parent)
@@ -580,21 +579,26 @@ func play_song(index: int) -> void:
 	play_state = PlayState.PLAY
 
 
-func _on_library_item_activated() -> void:
-	var item := library.get_selected()
-	var song := get_song(item)
-	
-	if song:
-		if Input.is_action_pressed(&"silent_add"):
-			current_playlist.add_song(song)
-		else:
-			var index := current_playlist.root.get_child_count()
+func item_pressed(item: TreeItem, silent: bool):
+	if item:
+		if item.has_meta(&"song"):
+			var song := item.get_meta(&"song") as Song
 			
-			playing_playlist = current_playlist
-			current_playlist.add_song(song)
-			play_song(index)
-	else:
-		item.collapsed = !item.collapsed
+			if silent:
+				current_playlist.add_song(song)
+			else:
+				var index := current_playlist.root.get_child_count()
+				
+				playing_playlist = current_playlist
+				current_playlist.add_song(song)
+				play_song(index)
+		else:
+			for i in item.get_children():
+				item_pressed(i, silent)
+
+
+func _on_library_item_activated() -> void:
+	item_pressed(library.get_selected(), Input.is_action_pressed(&"silent_add"))
 
 
 func _on_library_item_selected() -> void:
@@ -686,10 +690,13 @@ func _on_library_gui_input(event: InputEvent) -> void:
 	
 	if event is InputEventWithModifiers:
 		if event.is_action_pressed(&"ui_accept") and event.shift_pressed:
-			var item := library.get_selected()
-			
-			if item:
-				current_playlist.add_song(get_song(item))
+			item_pressed(library.get_selected(), true)
+	
+	if event.is_action_pressed(&"collapse"):
+		var item := library.get_selected()
+		
+		if item:
+			item.collapsed = !item.collapsed
 
 
 func _on_library_group_id_pressed(id: int) -> void:
@@ -835,8 +842,8 @@ func _on_to_end_pressed() -> void:
 	print("SKIP")
 
 
-func _on_library_button_clicked(item: TreeItem, _column: int, id: int, mouse_button_index: int) -> void:
-	current_playlist.add_song(get_song(item))
+func _on_library_button_clicked(item: TreeItem, _column: int, id: int, _mouse_button_index: int) -> void:
+	item_pressed(item, id == 0)
 
 
 func _on_volume_icon_pressed() -> void:
