@@ -16,8 +16,8 @@ use events::*;
 use id3::{Tag, TagLike};
 use serde_json::{from_str, to_string_pretty};
 
-// #[cfg(target_os = "linux")]
-// use xosd_rs::Xosd;
+#[cfg(target_os = "linux")]
+use xosd_rs::Xosd;
 
 
 pub trait BooleanConditional {
@@ -56,7 +56,7 @@ fn arg(arg_name: &str, argument: impl AsRef<OsStr>) -> OsString {
 
 #[inline(always)]
 fn show_notification(content: impl AsRef<str>) {
-    if let Some(e) = Notification::new().body(content.as_ref()).show().err() {
+    if let Err(e) = Notification::new().body(content.as_ref()).show() {
         println!("RUST-ERROR: Failed to show notification {}", e);
     }
 }
@@ -221,7 +221,7 @@ impl App {
                 "RESUME" => self.player.resume(),
                 "MUTE" => { self.player.mute = true; self.player.update_volume() }
                 "UNMUTE" => { self.player.mute = false; self.player.update_volume() }
-                "VOLUME" => if let Some(e) = args.parse().map(|v| self.volume(v, false)).err() { println!("RUST-ERROR: Cannot parse volume {}", e) }
+                "VOLUME" => if let Err(e) = args.parse().map(|v| self.volume(v, false)) { println!("RUST-ERROR: Cannot parse volume {}", e) }
                 "VOLINC" => self.volume(self.player.volume + self.volume_step, true),
                 "VOLDEC" => self.volume(self.player.volume - self.volume_step, true),
                 "APPEND" => self.playlist.append(args.to_string()),
@@ -235,7 +235,7 @@ impl App {
                 "INFO" => println!("GODOT-PRINT: {}", args),
                 "REWIND" => self.rewind(),
                 "FAST_FORWARD" => self.fast_forward(),
-                "SEEK" => if let Some(e) = args.parse().map(|d| self.player.seek(Duration::from_secs_f64(d))).err() { println!("RUST-ERROR: Cannot seek {} {}", args, e) }
+                "SEEK" => if let Err(e) = args.parse().map(|d| self.player.seek(Duration::from_secs_f64(d))) { println!("RUST-ERROR: Cannot seek {} {}", args, e) }
                 "EXIT" => close = true,
                 "EXIT_ALL" => return true,
                 _ => println!("GODOT: {}", command),
@@ -452,13 +452,17 @@ impl AsMut<Option<GUI>> for App {
 }
 
 fn main() {
-    // let mut xosd = Xosd::new(1).unwrap();
-    
-    // xosd.set_color("white").unwrap();
-    // xosd.set_timeout(5).unwrap();
-    // xosd.set_horizontal_align(xosd_rs::HorizontalAlign::Center).unwrap();
-    // xosd.set_vertical_align(xosd_rs::VerticalAlign::Top).unwrap();
-    // xosd.display(0, Command::String(flags.to_string())).unwrap();
+    #[cfg(target_os = "linux")]
+    match Xosd::new(1) {
+        Ok(mut xosd) => {
+            xosd.set_color("white").unwrap();
+            xosd.set_timeout(5).unwrap();
+            xosd.set_horizontal_align(xosd_rs::HorizontalAlign::Center).unwrap();
+            xosd.set_vertical_align(xosd_rs::VerticalAlign::Top).unwrap();
+            xosd.display(0, xosd_rs::Command::String("test".to_string())).unwrap();
+        }
+        Err(e) => println!("RUST-ERROR: Failed to initialize {}", e)
+    }
     
     App::run();
 }
