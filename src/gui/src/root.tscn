@@ -1,22 +1,42 @@
-[gd_scene load_steps=42 format=3 uid="uid://b81u1c55uki6f"]
+[gd_scene load_steps=44 format=3 uid="uid://b81u1c55uki6f"]
 
 [ext_resource type="Script" path="res://src/root.gd" id="1_21msl"]
 [ext_resource type="FontFile" uid="uid://c2bj8wx8rbb76" path="res://src/InterTight-VariableFont_wght.ttf" id="1_b7wi4"]
-[ext_resource type="FontFile" uid="uid://b3q82j6u0njhn" path="res://src/Everson Mono.ttf" id="1_t6ide"]
 [ext_resource type="Texture2D" uid="uid://d4misdx7d6u8c" path="res://src/icon.svg" id="2_8nwv5"]
 [ext_resource type="Script" path="res://src/volume.gd" id="4_4f0bk"]
 [ext_resource type="Texture2D" uid="uid://n0nl17yib76k" path="res://src/search.png" id="4_fa8re"]
+[ext_resource type="Texture2D" uid="uid://u7n7fx6onm6x" path="res://src/settings.svg" id="5_luty6"]
 [ext_resource type="Texture2D" uid="uid://dcs7smn7sadis" path="res://src/rename.svg" id="6_6k6bg"]
+[ext_resource type="Texture2D" uid="uid://calix6j3oqxtk" path="res://src/refresh.svg" id="6_7qped"]
 [ext_resource type="Texture2D" uid="uid://c4hfe1oxgr2ry" path="res://src/open.svg" id="6_bb4w2"]
 [ext_resource type="Texture2D" uid="uid://bi8eq56dy7vlo" path="res://src/progress_circle.png" id="6_h50mn"]
 [ext_resource type="Texture2D" uid="uid://cfbfxcjhtlnbu" path="res://src/plus.svg" id="6_lg5mx"]
 [ext_resource type="Texture2D" uid="uid://7ml16tcersji" path="res://src/save.svg" id="7_18uru"]
-[ext_resource type="Texture2D" uid="uid://m0707gni8b1c" path="res://src/shuffle.png" id="7_gk0bi"]
 [ext_resource type="Script" path="res://src/progress.gd" id="7_r6b18"]
 [ext_resource type="Texture2D" uid="uid://dj35ysaddo1ty" path="res://src/close.svg" id="8_pgjqf"]
 [ext_resource type="PackedScene" uid="uid://3t5vyoah711r" path="res://src/settings.tscn" id="13_eldab"]
 [ext_resource type="Texture2D" uid="uid://co7obo2c4d7rk" path="res://src/repeat.svg" id="13_kcn7q"]
+[ext_resource type="PackedScene" uid="uid://bc3tkieqsn2b5" path="res://src/button.tscn" id="14_8trso"]
 [ext_resource type="Texture2D" uid="uid://kt0mncs1w66" path="res://src/volume.svg" id="15_a48rs"]
+[ext_resource type="Texture2D" uid="uid://cpxkmfaf0n6ek" path="res://src/history.svg" id="15_hea6m"]
+[ext_resource type="Texture2D" uid="uid://dy8rta4qml00s" path="res://src/to_begin.svg" id="16_2qtyj"]
+[ext_resource type="Texture2D" uid="uid://dpg13jw51ryew" path="res://src/rewind.svg" id="17_3i4o2"]
+[ext_resource type="Texture2D" uid="uid://daf7o16n3gk8l" path="res://src/big_play.svg" id="18_e3x1e"]
+[ext_resource type="Texture2D" uid="uid://b5a52tldq6y83" path="res://src/fast_forward.svg" id="19_ndqbf"]
+[ext_resource type="Texture2D" uid="uid://d0ykaxv4f8eq1" path="res://src/to_end.svg" id="20_s4iee"]
+[ext_resource type="Texture2D" uid="uid://bdilhoxck7dmu" path="res://src/stop_song.svg" id="21_u5pk4"]
+[ext_resource type="Texture2D" uid="uid://d1yxhbb3jy8u4" path="res://src/shuffle.svg" id="22_gpsff"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_y2p2e"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wdvfo"]
+bg_color = Color(0.2484, 0.2484, 0.2484, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_smd77"]
+bg_color = Color(0, 0, 0, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rkfcm"]
+bg_color = Color(0.497474, 0.497474, 0.497474, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1r2kf"]
 bg_color = Color(0, 0, 0, 0)
@@ -24,16 +44,6 @@ border_width_bottom = 1
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ntp3s"]
 bg_color = Color(0, 0, 0, 1)
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_kgojd"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_21j7e"]
-bg_color = Color(0.2484, 0.2484, 0.2484, 1)
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_d0rqa"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4ptin"]
-bg_color = Color(0.497474, 0.497474, 0.497474, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cvgaj"]
 bg_color = Color(0, 0, 0, 0)
@@ -47,26 +57,6 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_y2p2e"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fir5g"]
-bg_color = Color(0.2484, 0.2484, 0.2484, 1)
-border_width_left = 16
-border_width_right = 16
-border_color = Color(0.247059, 0.247059, 0.247059, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cxqju"]
-bg_color = Color(0, 0, 0, 0)
-border_width_left = 16
-border_width_right = 16
-border_color = Color(0, 0, 0, 0)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hqfqr"]
-bg_color = Color(0.497474, 0.497474, 0.497474, 1)
-border_width_left = 16
-border_width_right = 16
-border_color = Color(0.498039, 0.498039, 0.498039, 1)
-
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_r0hw6"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ecv6u"]
@@ -77,24 +67,6 @@ corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_njlqp"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hqr3e"]
-bg_color = Color(0.247059, 0.247059, 0.247059, 1)
-border_width_left = 20
-border_width_right = 20
-border_color = Color(0.247059, 0.247059, 0.247059, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1w4cb"]
-bg_color = Color(0, 0, 0, 1)
-border_width_left = 20
-border_width_right = 20
-border_color = Color(0, 0, 0, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_inui3"]
-bg_color = Color(0.498039, 0.498039, 0.498039, 1)
-border_width_left = 20
-border_width_right = 20
-border_color = Color(0.498039, 0.498039, 0.498039, 1)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ohu8p"]
 
@@ -125,25 +97,16 @@ Album/fonts/font = ExtResource("1_b7wi4")
 Artist/base_type = &"Label"
 Artist/font_sizes/font_size = 24
 Artist/fonts/font = ExtResource("1_b7wi4")
+Button/styles/disabled = SubResource("StyleBoxEmpty_y2p2e")
+Button/styles/hover = SubResource("StyleBoxFlat_wdvfo")
+Button/styles/normal = SubResource("StyleBoxFlat_smd77")
+Button/styles/pressed = SubResource("StyleBoxFlat_rkfcm")
 LineEdit/styles/normal = SubResource("StyleBoxFlat_1r2kf")
 Lyrics/base_type = &"Label"
 Lyrics/font_sizes/font_size = 16
 Panel/styles/panel = SubResource("StyleBoxFlat_ntp3s")
-PlaylistControl/base_type = &"Button"
-PlaylistControl/styles/disabled = SubResource("StyleBoxEmpty_kgojd")
-PlaylistControl/styles/hover = SubResource("StyleBoxFlat_21j7e")
-PlaylistControl/styles/normal = SubResource("StyleBoxEmpty_d0rqa")
-PlaylistControl/styles/pressed = SubResource("StyleBoxFlat_4ptin")
 ProgressBackground/base_type = &"Panel"
 ProgressBackground/styles/panel = SubResource("StyleBoxFlat_cvgaj")
-SongControl/base_type = &"Button"
-SongControl/font_sizes/font_size = 48
-SongControl/fonts/font = ExtResource("1_t6ide")
-SongControl/styles/disabled = SubResource("StyleBoxEmpty_y2p2e")
-SongControl/styles/focus = null
-SongControl/styles/hover = SubResource("StyleBoxFlat_fir5g")
-SongControl/styles/normal = SubResource("StyleBoxFlat_cxqju")
-SongControl/styles/pressed = SubResource("StyleBoxFlat_hqfqr")
 SongProgress/base_type = &"ProgressBar"
 SongProgress/styles/background = SubResource("StyleBoxEmpty_r0hw6")
 SongProgress/styles/fill = SubResource("StyleBoxFlat_ecv6u")
@@ -153,12 +116,6 @@ Title/font_sizes/font_size = 32
 Title/fonts/font = ExtResource("1_b7wi4")
 TitleArtist/base_type = &"Label"
 TitleArtist/fonts/font = ExtResource("1_b7wi4")
-Toolbar/base_type = &"Button"
-Toolbar/font_sizes/font_size = 64
-Toolbar/fonts/font = ExtResource("1_t6ide")
-Toolbar/styles/hover = SubResource("StyleBoxFlat_hqr3e")
-Toolbar/styles/normal = SubResource("StyleBoxFlat_1w4cb")
-Toolbar/styles/pressed = SubResource("StyleBoxFlat_inui3")
 Tree/styles/panel = SubResource("StyleBoxEmpty_ohu8p")
 Tree/styles/selected = SubResource("StyleBoxFlat_xpudu")
 Tree/styles/selected_focus = SubResource("StyleBoxFlat_xpudu")
@@ -200,28 +157,26 @@ layout_mode = 2
 theme_override_constants/separation = 8
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 
-[node name="Settings" type="Button" parent="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer2"]
+[node name="Settings" parent="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer2" instance=ExtResource("14_8trso")]
 layout_mode = 2
 tooltip_text = "Settings"
-theme_type_variation = &"Toolbar"
-text = "⚙"
-expand_icon = true
+texture = ExtResource("5_luty6")
+margin = 8
 
-[node name="ReloadLibrary" type="Button" parent="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer2"]
+[node name="ReloadLibrary" parent="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer2" instance=ExtResource("14_8trso")]
 layout_mode = 2
-tooltip_text = "Refresh Library"
-theme_type_variation = &"Toolbar"
-text = "↻"
-expand_icon = true
+tooltip_text = "Refresh library"
+texture = ExtResource("6_7qped")
+margin = 8
 
-[node name="CloseApp" type="Button" parent="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer2"]
+[node name="CloseApp" parent="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer/HBoxContainer2" instance=ExtResource("14_8trso")]
 layout_mode = 2
-tooltip_text = "Refresh Library"
-theme_type_variation = &"Toolbar"
-text = "×"
-expand_icon = true
+tooltip_text = "Close app entirely (background process as well)"
+texture = ExtResource("8_pgjqf")
+margin = 8
 
 [node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
@@ -268,48 +223,34 @@ size_flags_vertical = 3
 drag_to_rearrange_enabled = true
 
 [node name="HBoxContainer" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists"]
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 alignment = 2
 
-[node name="NewPlaylist" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer"]
-custom_minimum_size = Vector2(48, 48)
+[node name="NewPlaylist" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer" instance=ExtResource("14_8trso")]
 layout_mode = 2
 tooltip_text = "Create new playlist"
-theme_type_variation = &"PlaylistControl"
-icon = ExtResource("6_lg5mx")
-expand_icon = true
+texture = ExtResource("6_lg5mx")
 
-[node name="RenamePlaylist" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer"]
-custom_minimum_size = Vector2(48, 48)
+[node name="RenamePlaylist" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer" instance=ExtResource("14_8trso")]
 layout_mode = 2
 tooltip_text = "Rename playlist"
-theme_type_variation = &"PlaylistControl"
-icon = ExtResource("6_6k6bg")
-expand_icon = true
+texture = ExtResource("6_6k6bg")
 
-[node name="OpenPlaylist" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer"]
-custom_minimum_size = Vector2(48, 48)
+[node name="OpenPlaylist" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer" instance=ExtResource("14_8trso")]
 layout_mode = 2
 tooltip_text = "Import playlist"
-theme_type_variation = &"PlaylistControl"
-icon = ExtResource("6_bb4w2")
-expand_icon = true
+texture = ExtResource("6_bb4w2")
 
-[node name="SavePlaylist" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer"]
-custom_minimum_size = Vector2(48, 48)
+[node name="SavePlaylist" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer" instance=ExtResource("14_8trso")]
 layout_mode = 2
 tooltip_text = "Export playlist"
-theme_type_variation = &"PlaylistControl"
-icon = ExtResource("7_18uru")
-expand_icon = true
+texture = ExtResource("7_18uru")
 
-[node name="DeletePlaylist" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer"]
-custom_minimum_size = Vector2(48, 48)
+[node name="DeletePlaylist" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer/Playlists/HBoxContainer" instance=ExtResource("14_8trso")]
 layout_mode = 2
 tooltip_text = "Remove playlist"
-theme_type_variation = &"PlaylistControl"
-icon = ExtResource("8_pgjqf")
-expand_icon = true
+texture = ExtResource("8_pgjqf")
 
 [node name="SongDetailsBox" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer/VSplitContainer"]
 unique_name_in_owner = true
@@ -413,79 +354,56 @@ texture = ExtResource("6_h50mn")
 
 [node name="ControlBar" type="HBoxContainer" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 alignment = 1
 
-[node name="Repeat" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
-unique_name_in_owner = true
+[node name="Repeat" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar" instance=ExtResource("14_8trso")]
 layout_mode = 2
-theme_type_variation = &"SongControl"
-icon = ExtResource("13_kcn7q")
-expand_icon = true
+texture = ExtResource("13_kcn7q")
+margin = 8
 
-[node name="PreviousSong" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
-unique_name_in_owner = true
+[node name="PreviousSong" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar" instance=ExtResource("14_8trso")]
 layout_mode = 2
-tooltip_text = "Previous Song"
-theme_type_variation = &"SongControl"
-text = "⏴"
-expand_icon = true
+tooltip_text = "Previous song in history"
+texture = ExtResource("15_hea6m")
+margin = 8
 
-[node name="ToBegin" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
-unique_name_in_owner = true
+[node name="ToBegin" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar" instance=ExtResource("14_8trso")]
 layout_mode = 2
 tooltip_text = "Rewind to the beginning"
-theme_type_variation = &"SongControl"
-text = "⏮"
-expand_icon = true
+texture = ExtResource("16_2qtyj")
 
-[node name="Rewind" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
-unique_name_in_owner = true
+[node name="Rewind" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar" instance=ExtResource("14_8trso")]
 layout_mode = 2
 tooltip_text = "Rewind"
-theme_type_variation = &"SongControl"
-text = "⏪"
-expand_icon = true
+texture = ExtResource("17_3i4o2")
 
-[node name="PlayPauseResume" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
-unique_name_in_owner = true
+[node name="PlayPauseResume" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar" instance=ExtResource("14_8trso")]
 layout_mode = 2
 tooltip_text = "Play / Pause"
-theme_type_variation = &"SongControl"
-text = "⏵"
-expand_icon = true
+texture = ExtResource("18_e3x1e")
 
-[node name="FastForward" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
-unique_name_in_owner = true
+[node name="FastForward" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar" instance=ExtResource("14_8trso")]
 layout_mode = 2
-tooltip_text = "Fast Forward"
-theme_type_variation = &"SongControl"
-text = "⏩"
-expand_icon = true
+tooltip_text = "Fast forward"
+texture = ExtResource("19_ndqbf")
 
-[node name="ToEnd" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
-unique_name_in_owner = true
+[node name="ToEnd" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar" instance=ExtResource("14_8trso")]
 layout_mode = 2
 tooltip_text = "Fast forward to the end"
-theme_type_variation = &"SongControl"
-text = "⏭"
-expand_icon = true
+texture = ExtResource("20_s4iee")
 
-[node name="StopSong" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
-unique_name_in_owner = true
+[node name="StopSong" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar" instance=ExtResource("14_8trso")]
 layout_mode = 2
 tooltip_text = "Stop"
-theme_type_variation = &"SongControl"
-text = "⏹"
-expand_icon = true
+texture = ExtResource("21_u5pk4")
 
-[node name="Shuffle" type="Button" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar"]
-unique_name_in_owner = true
+[node name="Shuffle" parent="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar" instance=ExtResource("14_8trso")]
 layout_mode = 2
 tooltip_text = "Shuffle"
-theme_type_variation = &"SongControl"
-icon = ExtResource("7_gk0bi")
-expand_icon = true
+texture = ExtResource("22_gpsff")
+margin = 4
 
 [node name="Margin" type="Control" parent="HBoxContainer/HSplitContainer/VBoxContainer"]
 layout_mode = 2
@@ -501,13 +419,11 @@ theme_override_constants/margin_bottom = 32
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="VolumeIcon" type="TextureRect" parent="HBoxContainer/MarginContainer/VBoxContainer"]
+[node name="VolumeIcon" parent="HBoxContainer/MarginContainer/VBoxContainer" instance=ExtResource("14_8trso")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 texture = ExtResource("15_a48rs")
-expand_mode = 2
-stretch_mode = 5
+expand_mode = 4
 
 [node name="Label" type="Label" parent="HBoxContainer/MarginContainer/VBoxContainer"]
 self_modulate = Color(1, 1, 1, 0)
@@ -666,7 +582,7 @@ use_native_dialog = true
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/ToEnd" to="." method="_on_to_end_pressed"]
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/StopSong" to="." method="_on_stop_song_pressed"]
 [connection signal="pressed" from="HBoxContainer/HSplitContainer/VBoxContainer/ControlBar/Shuffle" to="." method="_on_shuffle_pressed"]
-[connection signal="gui_input" from="HBoxContainer/MarginContainer/VBoxContainer/VolumeIcon" to="." method="_on_volume_icon_gui_input"]
+[connection signal="pressed" from="HBoxContainer/MarginContainer/VBoxContainer/VolumeIcon" to="." method="_on_volume_icon_pressed"]
 [connection signal="close" from="SettingsPanel/Settings" to="." method="_on_settings_close"]
 [connection signal="id_pressed" from="LibraryGroup" to="." method="_on_library_group_id_pressed"]
 [connection signal="close_requested" from="NewPlaylistDialog" to="." method="_on_new_playlist_dialog_close_requested"]

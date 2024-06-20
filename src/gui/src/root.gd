@@ -2,11 +2,9 @@ class_name Root
 extends Panel
 
 
-const PLAY_SYMBOL := "⏵"
-const PAUSE_SYMBOL := "⏸"
+const SHUFFLE_MODULATE := Color(1, 1, 1)
+const NO_SHUFFLE_MODULATE := Color(0.5, 0.5, 0.5)
 
-const SHUFFLE := preload("res://src/shuffle.png")
-const NO_SHUFFLE := preload("res://src/no_shuffle.png")
 
 enum TagMode {
 	NONE,
@@ -68,32 +66,29 @@ var play_state := PlayState.IDLE:
 	set(value):
 		play_state = value
 		
+		var generic_control := true
+		
 		match value:
 			PlayState.IDLE:
 				song_position = 0.0
-				%PlayPauseResume.text = PLAY_SYMBOL
-				%PlayPauseResume.disabled = last_played == null
-				%ToBegin.disabled = true
-				%Rewind.disabled = true
-				%FastForward.disabled = true
-				%StopSong.disabled = true
-				%ToEnd.disabled = true
+				%ControlBar/PlayPauseResume.texture = preload("res://src/big_play.svg")
+				%ControlBar/PlayPauseResume.enabled = last_played != null
+				generic_control = false
 			
 			PlayState.PLAY:
-				%PlayPauseResume.text = PAUSE_SYMBOL
-				%ToBegin.disabled = false
-				%Rewind.disabled = false
-				%FastForward.disabled = false
-				%StopSong.disabled = false
-				%ToEnd.disabled = false
+				%ControlBar/PlayPauseResume.texture = preload("res://src/pause.svg")
 			
 			PlayState.PAUSE:
-				%PlayPauseResume.text = PLAY_SYMBOL
-				%ToBegin.disabled = false
-				%Rewind.disabled = false
-				%FastForward.disabled = false
-				%StopSong.disabled = false
-				%ToEnd.disabled = false
+				%ControlBar/PlayPauseResume.texture = preload("res://src/big_play.svg")
+		
+		for control in [
+				%ControlBar/ToBegin,
+				%ControlBar/Rewind,
+				%ControlBar/FastForward,
+				%ControlBar/StopSong,
+				%ControlBar/ToEnd,
+		]:
+			control.enabled = generic_control
 var song_duration := 0.0:
 	set(value):
 		song_duration = maxf(0, value)
@@ -218,16 +213,13 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed(&"search"):
 		%Search.grab_focus()
 	
-	%Repeat.custom_minimum_size.x = %Repeat.size.y
-	%Shuffle.custom_minimum_size.x = %Shuffle.size.y
-	
 	song_progress.modulate = Color(1, 1, 1, 1) if play_state != PlayState.IDLE and song_duration > 0 else Color(0, 0, 0, 0)
 	
 	if play_state == PlayState.PLAY:
 		song_position += delta
 		
 		if song_duration > 0 and song_position > song_duration:
-			if %Repeat.icon == preload("res://src/repeat_one.svg"):
+			if %ControlBar/Repeat.texture == preload("res://src/repeat_one.svg"):
 				song_position = 0
 			else:
 				play_state = PlayState.IDLE
@@ -534,26 +526,26 @@ func command(string: String) -> void:
 		"REPEAT":
 			match args[1]:
 				"none":
-					%Repeat.icon = preload("res://src/no_repeat.svg")
-					%Repeat.tooltip_text = "No repeat (Toggle to repeat all songs in playlist)"
+					%ControlBar/Repeat.texture = preload("res://src/no_repeat.svg")
+					%ControlBar/Repeat.tooltip_text = "No repeat (Toggle to repeat all songs in playlist)"
 				
 				"all":
-					%Repeat.icon = preload("res://src/repeat.svg")
-					%Repeat.tooltip_text = "Repeat all songs in playlist (Toggle to repeat one song infinitely)"
+					%ControlBar/Repeat.texture = preload("res://src/repeat.svg")
+					%ControlBar/Repeat.tooltip_text = "Repeat all songs in playlist (Toggle to repeat one song infinitely)"
 				
 				"one":
-					%Repeat.icon = preload("res://src/repeat_one.svg")
-					%Repeat.tooltip_text = "Repeat one song infinitely (Toggle to stop after every song)"
+					%ControlBar/Repeat.texture = preload("res://src/repeat_one.svg")
+					%ControlBar/Repeat.tooltip_text = "Repeat one song infinitely (Toggle to stop after every song)"
 				
 				"stop":
-					%Repeat.icon = preload("res://src/stop.svg")
-					%Repeat.tooltip_text = "Stop after every song is finished (Toggle to disable repeating)"
+					%ControlBar/Repeat.texture = preload("res://src/stop.svg")
+					%ControlBar/Repeat.tooltip_text = "Stop after every song is finished (Toggle to disable repeating)"
 		
 		"SHUFFLE":
-			%Shuffle.icon = SHUFFLE
+			%ControlBar/Shuffle.modulate = SHUFFLE_MODULATE
 		
 		"NO_SHUFFLE":
-			%Shuffle.icon = NO_SHUFFLE
+			%ControlBar/Shuffle.modulate = NO_SHUFFLE_MODULATE
 		
 		"RESUME":
 			play_state = PlayState.PLAY
@@ -644,13 +636,13 @@ func _on_repeat_pressed() -> void:
 
 
 func _on_shuffle_pressed() -> void:
-	match %Shuffle.icon:
-		NO_SHUFFLE:
-			%Shuffle.icon = SHUFFLE
+	match %ControlBar/Shuffle.modulate:
+		NO_SHUFFLE_MODULATE:
+			%ControlBar/Shuffle.modulate = SHUFFLE_MODULATE
 			print("SHUFFLE")
 		
-		SHUFFLE:
-			%Shuffle.icon = NO_SHUFFLE
+		SHUFFLE_MODULATE:
+			%ControlBar/Shuffle.modulate = NO_SHUFFLE_MODULATE
 			print("NO_SHUFFLE")
 
 
@@ -835,7 +827,6 @@ func _on_import_playlist_name_dialog_close_requested() -> void:
 
 
 func _on_previous_song_pressed() -> void:
-	play_state = PlayState.IDLE
 	print("PREV")
 
 
@@ -848,12 +839,10 @@ func _on_library_button_clicked(item: TreeItem, _column: int, id: int, mouse_but
 	current_playlist.add_song(get_song(item))
 
 
-func _on_volume_icon_gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton:
-		if event.pressed:
-			if %VolumeIcon.texture == preload("res://src/mute.svg"):
-				mute = false
-				print("UNMUTE")
-			else:
-				mute = true
-				print("MUTE")
+func _on_volume_icon_pressed() -> void:
+	if %VolumeIcon.texture == preload("res://src/mute.svg"):
+		mute = false
+		print("UNMUTE")
+	else:
+		mute = true
+		print("MUTE")

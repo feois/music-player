@@ -1,7 +1,9 @@
-[gd_scene load_steps=3 format=3 uid="uid://3t5vyoah711r"]
+[gd_scene load_steps=5 format=3 uid="uid://3t5vyoah711r"]
 
 [ext_resource type="Script" path="res://src/settings.gd" id="1_5fmu4"]
+[ext_resource type="PackedScene" uid="uid://bc3tkieqsn2b5" path="res://src/button.tscn" id="2_svhev"]
 [ext_resource type="Texture2D" uid="uid://c4hfe1oxgr2ry" path="res://src/open.svg" id="2_ughdl"]
+[ext_resource type="Texture2D" uid="uid://calix6j3oqxtk" path="res://src/refresh.svg" id="3_xpnv4"]
 
 [node name="Settings" type="Panel"]
 anchors_preset = 15
@@ -56,13 +58,12 @@ size_flags_horizontal = 3
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Library Path"
-autowrap_mode = 3
 
-[node name="ResetLibraryPath" type="Button" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer/HBoxContainer2"]
+[node name="ResetLibraryPath" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer/HBoxContainer2" instance=ExtResource("2_svhev")]
 unique_name_in_owner = true
 layout_mode = 2
-theme_type_variation = &"SymbolButton"
-text = "↺"
+texture = ExtResource("3_xpnv4")
+margin = 4
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
@@ -73,11 +74,11 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="LibraryPathOpen" type="Button" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer/HBoxContainer"]
+[node name="LibraryPathOpen" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer/HBoxContainer" instance=ExtResource("2_svhev")]
 unique_name_in_owner = true
 layout_mode = 2
-icon = ExtResource("2_ughdl")
-expand_icon = true
+texture = ExtResource("2_ughdl")
+margin = 4
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer"]
 layout_mode = 2
