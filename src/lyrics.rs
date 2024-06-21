@@ -1,5 +1,5 @@
 
-use std::time::Duration;
+use std::{fmt::{Debug, Display}, time::Duration};
 use serde_derive::*;
 
 
@@ -43,13 +43,21 @@ pub trait LyricsTrait {
 
 
 pub struct Dummy;
+#[derive(Debug)]
+pub struct DummyError;
 
 impl LyricsTrait for Dummy {
-    type Error = ();
+    type Error = DummyError;
     
     #[inline(always)]
     fn new(_pos: LyricsPosition) -> Result<Self, Self::Error> {
         Ok(Self)
+    }
+}
+
+impl Display for DummyError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(&self, f)
     }
 }
 
