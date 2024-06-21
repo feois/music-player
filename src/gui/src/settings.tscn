@@ -102,6 +102,21 @@ popup/item_1/id = 1
 popup/item_2/text = "Always"
 popup/item_2/id = 2
 
+[node name="HBoxContainer3" type="HBoxContainer" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer3"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Margin of floating lyrics"
+autowrap_mode = 3
+
+[node name="LyricsMargin" type="LineEdit" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer3"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+virtual_keyboard_type = 2
+
 [node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_constants/separation = 16
@@ -122,6 +137,7 @@ text = "Discard & Close"
 [connection signal="dir_selected" from="LibraryPathSelector" to="." method="_on_library_path_selector_dir_selected"]
 [connection signal="pressed" from="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer/HBoxContainer2/ResetLibraryPath" to="." method="_on_reset_library_path_pressed"]
 [connection signal="pressed" from="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer/HBoxContainer/LibraryPathOpen" to="." method="_on_library_path_open_pressed"]
+[connection signal="text_submitted" from="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer3/LyricsMargin" to="." method="_on_lyrics_margin_text_submitted"]
 [connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/RestoreAll" to="." method="_on_restore_all_pressed"]
 [connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/Save" to="." method="_on_save_pressed"]
 [connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/Close" to="." method="_on_close_pressed"]

@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use id3::{frame::SynchronisedLyricsType, v1v2::read_from_path};
 use playback_rs::Song;
 use serde::{Deserialize, Serialize};
 
@@ -15,6 +16,7 @@ pub enum PlayerState {
 pub struct Player {
     player: playback_rs::Player,
     state: PlayerState,
+    lyrics: Vec<(u32, String)>,
     pub mute: bool,
     pub volume: f32,
 }
@@ -33,6 +35,7 @@ impl Player {
         Self {
             player: playback_rs::Player::new(None).expect("Failed to initialize player"),
             state: PlayerState::Idle,
+            lyrics: Vec::new(),
             mute: false,
             volume: 1.,
         }
@@ -72,8 +75,18 @@ impl Player {
                 else {
                     println!("TASK: Playing song {}", path);
                     
-                    self.resume();
+                    self.player.set_playing(true);
                     self.state = PlayerState::Play;
+                    
+                    match read_from_path(path) {
+                        Ok(tag) => {
+                            if let Some(lyrics) = tag.synchronised_lyrics().find(|sl| sl.lang == "eng" && sl.content_type == SynchronisedLyricsType::Lyrics) {
+                                self.lyrics = lyrics.content.clone();
+                                self.lyrics.sort_by_key(|&(time, _)| time);
+                            }
+                        }
+                        Err(e) => println!("RUST-ERROR: Cannot read tag from {} ({})", path, e)
+                    }
                 }
             }
             Err(e) => println!("Failed to load song {} {:?}", path, e),
@@ -178,6 +191,8 @@ impl<'de> Deserialize<'de> for Player {
         
         p.mute = s.mute;
         p.volume = s.volume;
+        
+        p.update_volume();
         
         Ok(p)
     }

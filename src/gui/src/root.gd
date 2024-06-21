@@ -102,6 +102,7 @@ var song_position := 0.0:
 		if is_node_ready() and song_duration != 0:
 			song_progress.value = song_position
 			%SongProgress/TextureRect.position.x = song_progress.size.x * song_position / song_duration - %SongProgress/TextureRect.size.x / 2
+var lyrics_margin := 0
 var cache_path := "user://"
 var cache_file_path: String:
 	get: return cache_path.path_join("gui.json")
@@ -121,6 +122,7 @@ const ARG_SONG_PATH := "--song-path="
 const ARG_SONG_DURATION := "--song-duration="
 const ARG_SONG_POSITION := "--song-position="
 const ARG_LAST_SONG := "--last-song="
+const ARG_LYRICS_MARGIN := "--lyrics-margin="
 
 
 func _ready() -> void:
@@ -146,6 +148,9 @@ func _ready() -> void:
 		
 		if arg.begins_with(ARG_LAST_SONG):
 			song_path = arg.lstrip(ARG_LAST_SONG)
+		
+		if arg.begins_with(ARG_LYRICS_MARGIN):
+			lyrics_margin = int(arg.lstrip(ARG_LYRICS_MARGIN))
 		
 		if arg == "--paused":
 			play_state = PlayState.PAUSE
@@ -593,8 +598,14 @@ func item_pressed(item: TreeItem, silent: bool):
 				current_playlist.add_song(song)
 				play_song(index)
 		else:
+			var index := current_playlist.root.get_child_count()
+			
 			for i in item.get_children():
-				item_pressed(i, silent)
+				item_pressed(i, true)
+			
+			if index < current_playlist.root.get_child_count() and not silent:
+				playing_playlist = current_playlist
+				play_song(index)
 
 
 func _on_library_item_activated() -> void:

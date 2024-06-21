@@ -1,4 +1,4 @@
-// #![windows_subsystem = "windows"]
+#![windows_subsystem = "windows"]
 
 use std::{env::current_exe, ffi::{OsStr, OsString}, fs::{create_dir_all, read_to_string, write}, path::PathBuf, time::{Duration, Instant}};
 
@@ -7,17 +7,17 @@ mod player;
 mod events;
 mod history;
 mod playlist;
+mod lyrics;
 
 use gui::*;
-use notify_rust::Notification;
 use player::*;
 use playlist::*;
 use events::*;
+use lyrics::*;
+
 use id3::{Tag, TagLike};
 use serde_json::{from_str, to_string_pretty};
-
-#[cfg(target_os = "linux")]
-use xosd_rs::Xosd;
+use notify_rust::Notification;
 
 
 pub trait BooleanConditional {
@@ -67,12 +67,14 @@ struct App {
     player: Player,
     playlist: Playlist,
     listener: EventListener,
+    lyrics: Option<Lyrics>,
     
     fps: f64,
     delta: Duration,
     volume_step: f32,
     key_duration: Duration,
     seek_duration: Duration,
+    lyrics_position: LyricsPosition,
     cache_path: PathBuf,
     
     toggle_gui: Option<usize>,
@@ -88,6 +90,16 @@ struct App {
     rewind: Option<usize>,
     fast_forward: Option<usize>,
     
+    lyrics_top_left: Option<usize>,
+    lyrics_top_center: Option<usize>,
+    lyrics_top_right: Option<usize>,
+    lyrics_center_left: Option<usize>,
+    lyrics_center: Option<usize>,
+    lyrics_center_right: Option<usize>,
+    lyrics_bottom_left: Option<usize>,
+    lyrics_bottom_center: Option<usize>,
+    lyrics_bottom_right: Option<usize>,
+    
     request_duration: bool,
     stop_next: bool,
 }
@@ -100,12 +112,14 @@ impl App {
             playlist: Playlist::new(100),
             player: Player::new(),
             listener: EventListener::listen(),
+            lyrics: None,
             
             fps: 120.,
             delta: Duration::ZERO,
             volume_step: 0.05,
             key_duration: Duration::from_millis(100),
             seek_duration: Duration::from_secs(5),
+            lyrics_position: LyricsPosition { layout: LyricsLayout::TopCenter, margin: 48 },
             cache_path: {
                 let mut path = dirs::cache_dir().unwrap();
                 
@@ -131,12 +145,23 @@ impl App {
             rewind: None,
             fast_forward: None,
             
+            lyrics_top_left: None,
+            lyrics_top_center: None,
+            lyrics_top_right: None,
+            lyrics_center_left: None,
+            lyrics_center: None,
+            lyrics_center_right: None,
+            lyrics_bottom_left: None,
+            lyrics_bottom_center: None,
+            lyrics_bottom_right: None,
+            
             request_duration: false,
             stop_next: false,
         };
         
         let playlist_cache_path = app.cache_path.as_path().join("playlist.json");
         let player_cache_path = app.cache_path.as_path().join("player.json");
+        let lyrics_cache_path = app.cache_path.as_path().join("lyrics.json");
         
         if let Some(playlist) = read_to_string(&playlist_cache_path).ok().and_then(|s| from_str(&s).ok()) {
             app.playlist = playlist;
@@ -147,31 +172,109 @@ impl App {
             app.player = player;
         }
         
+        if let Some(lp) = read_to_string(&lyrics_cache_path).ok().and_then(|s| from_str(&s).ok()) {
+            app.lyrics_position = lp;
+        }
+        
+        match Lyrics::new(app.lyrics_position) {
+            Ok(lyrics) => { app.lyrics.replace(lyrics); }
+            Err(e) => println!("RUST-ERROR: Failed to initialize floating lyrics {}", e)
+        }
+        
         app.delta = Duration::from_secs_f64(1. / app.fps);
         
-        app.toggle_gui = Some(app.listener.register_once_combination([Key::Alt, Key::KeyC]));
-        app.quit_app = Some(app.listener.register_once_combination([Key::Alt, Key::KeyE]));
-        app.pause_resume_song = Some(app.listener.register_once_combination([Key::Alt, Key::Space]));
-        app.stop_player = Some(app.listener.register_once_combination([Key::Alt, Key::ShiftLeft, Key::Space]));
-        app.toggle_repeat_mode = Some(app.listener.register_once_combination([Key::Alt, Key::KeyR]));
-        app.toggle_shuffling = Some(app.listener.register_once_combination([Key::Alt, Key::ShiftLeft, Key::KeyR]));
-        app.toggle_mute = Some(app.listener.register_once_combination([Key::Alt, Key::KeyM]));
-        app.toggle_stop_next = Some(app.listener.register_once_combination([Key::Alt, Key::ShiftLeft, Key::KeyM]));
+        let mut regonce = |keys: &[Key]| Some(app.listener.register_once_combination(keys));
         
-        app.volume_increase = Some(app.listener.register_combination([Key::Alt, Key::UpArrow], app.key_duration));
-        app.volume_decrease = Some(app.listener.register_combination([Key::Alt, Key::DownArrow], app.key_duration));
-        app.rewind = Some(app.listener.register_combination([Key::Alt, Key::LeftArrow], app.key_duration * 2));
-        app.fast_forward = Some(app.listener.register_combination([Key::Alt, Key::RightArrow], app.key_duration * 2));
+        app.toggle_gui          = regonce(&[Key::Alt, Key::KeyC]);
+        app.quit_app            = regonce(&[Key::Alt, Key::KeyE]);
+        app.pause_resume_song   = regonce(&[Key::Alt, Key::Space]);
+        app.stop_player         = regonce(&[Key::Alt, Key::ShiftLeft, Key::Space]);
+        app.toggle_repeat_mode  = regonce(&[Key::Alt, Key::KeyR]);
+        app.toggle_shuffling    = regonce(&[Key::Alt, Key::ShiftLeft, Key::KeyR]);
+        app.toggle_mute         = regonce(&[Key::Alt, Key::KeyM]);
+        app.toggle_stop_next    = regonce(&[Key::Alt, Key::ShiftLeft, Key::KeyM]);
+        
+        app.lyrics_top_left         = regonce(&[Key::Alt, Key::KeyL, Key::Num1]);
+        app.lyrics_top_center       = regonce(&[Key::Alt, Key::KeyL, Key::Num2]);
+        app.lyrics_top_right        = regonce(&[Key::Alt, Key::KeyL, Key::Num3]);
+        app.lyrics_center_left      = regonce(&[Key::Alt, Key::KeyL, Key::Num4]);
+        app.lyrics_center           = regonce(&[Key::Alt, Key::KeyL, Key::Num5]);
+        app.lyrics_center_right     = regonce(&[Key::Alt, Key::KeyL, Key::Num6]);
+        app.lyrics_bottom_left      = regonce(&[Key::Alt, Key::KeyL, Key::Num7]);
+        app.lyrics_bottom_center    = regonce(&[Key::Alt, Key::KeyL, Key::Num8]);
+        app.lyrics_bottom_right     = regonce(&[Key::Alt, Key::KeyL, Key::Num9]);
+        
+        let mut reg = |keys: &[Key], d| Some(app.listener.register_combination(keys, d));
+        
+        app.volume_increase = reg(&[Key::Alt, Key::UpArrow], app.key_duration);
+        app.volume_decrease = reg(&[Key::Alt, Key::DownArrow], app.key_duration);
+        app.rewind          = reg(&[Key::Alt, Key::LeftArrow], app.key_duration * 2);
+        app.fast_forward    = reg(&[Key::Alt, Key::RightArrow], app.key_duration * 2);
         
         app.launch_gui();
         
         loop {
             let t = Instant::now();
             
+            app.player.update_state();
+            
+            match app.player.get_state() {
+                PlayerState::Play => {
+                    if let Some(lyrics) = &mut app.lyrics {
+                        if let Err(e) = lyrics.update(app.player.get_position()) {
+                            println!("RUST-ERROR: Failed to update lyrics {}", e);
+                        }
+                    }
+                }
+                PlayerState::Finished => {
+                    app.player.idle();
+                    
+                    if app.stop_next {
+                        app.stop_next = false;
+                        
+                        println!("STATUS: Idle");
+                    }
+                    else {
+                        app.poll();
+                    }
+                    
+                    if let PlayerState::Idle = app.player.get_state() {
+                        if let Some(lyrics) = &mut app.lyrics {
+                            match lyrics.is_showing() {
+                                Ok(true) => if let Err(e) = lyrics.reset() {
+                                    println!("RUST-ERROR: Failed to reset lyrics {}", e)
+                                }
+                                Ok(false) => {}
+                                Err(e) => println!("RUST-ERROR: Failed to retrieve lyrics status {}", e)
+                            }
+                        }
+                    }
+                }
+                PlayerState::Idle => {
+                    if let Some(lyrics) = &mut app.lyrics {
+                        match lyrics.is_showing() {
+                            Ok(true) => if let Err(e) = lyrics.reset() {
+                                println!("RUST-ERROR: Failed to reset lyrics {}", e)
+                            }
+                            Ok(false) => {}
+                            Err(e) => println!("RUST-ERROR: Failed to retrieve lyrics status {}", e)
+                        }
+                    }
+                }
+                _ => {}
+            }
+            
             if app.gui_events() || app.key_events() {
                 app.close_gui();
                 break;
             }
+            
+            if let Some(lyrics) = &mut app.lyrics {
+                if let Err(e) = lyrics.set_pos(app.lyrics_position) {
+                    println!("Failed to reposition lyrics {}", e);
+                }
+            }
+            
             
             let t = Instant::now().duration_since(t);
             
@@ -182,25 +285,13 @@ impl App {
         
         write(playlist_cache_path, to_string_pretty(&app.playlist).expect("Failed to serialize")).expect("Failed to save cache");
         write(player_cache_path, to_string_pretty(&app.player).expect("Failed to serialize")).expect("Failed to save cache");
+        write(lyrics_cache_path, to_string_pretty(&app.lyrics_position).expect("Failed to serialize")).expect("Failed to save cache");
+        
+        println!("STATUS: Exiting");
     }
     
     fn gui_events(&mut self) -> bool {
         let mut close = false;
-        
-        self.player.update_state();
-        
-        if let PlayerState::Finished = self.player.get_state() {
-            self.player.idle();
-            
-            if self.stop_next {
-                self.stop_next = false;
-                
-                println!("STATUS: Idle");
-            }
-            else {
-                self.poll();
-            }
-        }
         
         if self.request_duration && self.player.get_length() != Duration::ZERO {
             ["DURATION", &self.player.get_length().as_secs().to_string()].gui_write_if(self);
@@ -211,8 +302,15 @@ impl App {
             let (command_name, args) = command.split_once(' ').unwrap_or((&command, ""));
             
             match command_name {
+                "MARGIN" => self.lyrics_position.margin = args.parse().unwrap(),
                 "READTAG" => self.read_tags(args),
-                "PLAY" => { self.player.play(self.playlist.select(args.parse().unwrap())); self.request_duration = true }
+                "PLAY" => {
+                    let song = &self.playlist.select(args.parse().unwrap()).to_string();
+                    
+                    self.player.play(song);
+                    self.request_duration = true;
+                    self.show_lyrics(song);
+                }
                 "STOP" => self.player.stop(),
                 "REPLAY" => if let Some(song) = self.playlist.get_history().get_current().cloned() { self.play(&song) }
                 "PREV" => if let Some(song) = self.playlist.look_back() { self.play(&song); }
@@ -326,6 +424,42 @@ impl App {
             if comb == self.fast_forward {
                 self.fast_forward();
             }
+            
+            if comb == self.lyrics_top_left {
+                self.lyrics_position.layout = LyricsLayout::TopLeft;
+            }
+            
+            if comb == self.lyrics_top_center {
+                self.lyrics_position.layout = LyricsLayout::TopCenter;
+            }
+            
+            if comb == self.lyrics_top_right {
+                self.lyrics_position.layout = LyricsLayout::TopRight;
+            }
+            
+            if comb == self.lyrics_center_left {
+                self.lyrics_position.layout = LyricsLayout::CenterLeft;
+            }
+            
+            if comb == self.lyrics_center {
+                self.lyrics_position.layout = LyricsLayout::Center;
+            }
+            
+            if comb == self.lyrics_center_right {
+                self.lyrics_position.layout = LyricsLayout::CenterRight;
+            }
+            
+            if comb == self.lyrics_bottom_left {
+                self.lyrics_position.layout = LyricsLayout::BottomLeft;
+            }
+            
+            if comb == self.lyrics_bottom_center {
+                self.lyrics_position.layout = LyricsLayout::BottomCenter;
+            }
+            
+            if comb == self.lyrics_bottom_right {
+                self.lyrics_position.layout = LyricsLayout::BottomRight;
+            }
         }
         
         false
@@ -344,7 +478,10 @@ impl App {
         dir.pop();
         dir.push("godot");
         
-        let mut args = vec![arg("--cache-path=", &self.cache_path)];
+        let mut args = vec![
+            arg("--cache-path=", &self.cache_path),
+            arg("--lyrics-margin=", self.lyrics_position.margin.to_string()),
+        ];
         
         match self.player.get_state() {
             PlayerState::Play | PlayerState::Pause => {
@@ -426,6 +563,23 @@ impl App {
         self.player.play(song);
         ["PLAY", song].gui_write_if(self);
         self.request_duration = true;
+        self.show_lyrics(song);
+    }
+    
+    #[inline(always)]
+    fn show_lyrics(&mut self, path: &str) {
+        if let Some(lyrics) = &mut self.lyrics {
+            match Tag::read_from_path(path) {
+                Ok(tag) => {
+                    if let Some(l) = tag.synchronised_lyrics().find(|l| l.lang == "eng") {
+                        if let Err(e) = lyrics.start(l.content.clone()) {
+                            println!("RUST-ERROR: Failed to display lyrics {}", e)
+                        }
+                    }
+                }
+                Err(e) => println!("RUST-ERROR: Failed to read tag from {} ({})", path, e)
+            }
+        }
     }
     
     #[inline(always)]
@@ -452,17 +606,5 @@ impl AsMut<Option<GUI>> for App {
 }
 
 fn main() {
-    #[cfg(target_os = "linux")]
-    match Xosd::new(1) {
-        Ok(mut xosd) => {
-            xosd.set_color("white").unwrap();
-            xosd.set_timeout(5).unwrap();
-            xosd.set_horizontal_align(xosd_rs::HorizontalAlign::Center).unwrap();
-            xosd.set_vertical_align(xosd_rs::VerticalAlign::Top).unwrap();
-            xosd.display(0, xosd_rs::Command::String("test".to_string())).unwrap();
-        }
-        Err(e) => println!("RUST-ERROR: Failed to initialize {}", e)
-    }
-    
     App::run();
 }
