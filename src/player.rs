@@ -95,42 +95,46 @@ impl Player {
     
     #[inline(always)]
     pub fn stop(&mut self) {
-        println!("TASK: Stopping");
-        
-        self.player.stop();
-        
         if let PlayerState::Finished = self.state {}
-        else { self.state = PlayerState::Idle; }
+        else {
+            println!("TASK: Stopping");
+            
+            self.player.stop();
+            
+            self.state = PlayerState::Idle;
+        }
     }
     
     #[inline(always)]
     pub fn skip(&mut self) {
-        println!("TASK: Skipping current song");
-        
-        self.player.stop();
-        
         if let PlayerState::Idle = self.state {}
-        else { self.state = PlayerState::Finished; }
+        else {
+            println!("TASK: Skipping current song");
+            
+            self.player.stop();
+            
+            self.state = PlayerState::Finished;
+        }
     }
     
     #[inline(always)]
     pub fn pause(&mut self) {
-        println!("TASK: Pausing");
-        
-        self.player.set_playing(false);
-        
         if let PlayerState::Play = self.state {
+            println!("TASK: Pausing");
+            
+            self.player.set_playing(false);
+            
             self.state = PlayerState::Pause;
         }
     }
     
     #[inline(always)]
     pub fn resume(&mut self) {
-        println!("TAsK: Resuming");
-        
-        self.player.set_playing(true);
-        
         if let PlayerState::Pause = self.state {
+            println!("TAsK: Resuming");
+            
+            self.player.set_playing(true);
+            
             self.state = PlayerState::Play;
         }
     }

@@ -86,7 +86,7 @@ mod xosd {
         
         let (o1, o2, o3) = match v {
             VerticalAlign::Top => (0, small, small + big),
-            VerticalAlign::Center => (-big, 0, big),
+            VerticalAlign::Center => (big, 0, -big),
             VerticalAlign::Bottom => (small + big, small, 0),
         };
         

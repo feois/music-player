@@ -1,4 +1,4 @@
-use std::{ffi::OsStr, io::{BufRead, BufReader, Write}, process::{Child, ChildStdin, Command, Stdio}, sync::mpsc::{channel, Receiver}, thread, time::Duration};
+use std::{ffi::OsStr, io::{BufRead, BufReader, Write}, process::{Child, ChildStdin, Command, Stdio}, sync::mpsc::{channel, Receiver}, thread::{self, panicking}, time::Duration};
 
 
 pub const DELIMETER: &str = "::::";
@@ -134,16 +134,52 @@ impl GUI {
     }
 }
 
+impl Drop for GUI {
+    #[inline(always)]
+    fn drop(&mut self) {
+        if panicking() {
+            if !self.finished() {
+                println!("TASK: Closing GUI");
+                
+                self.write_line("EXIT");
+                
+                spin_sleep::sleep(Duration::from_millis(500));
+                
+                if !self.finished() {
+                    println!("INFO: GUI has not closed yet");
+                    
+                    for i in 0..3 {
+                        spin_sleep::sleep(Duration::from_secs(1));
+                        
+                        if self.finished() {
+                            return;
+                        }
+                        
+                        println!("INFO: GUI has not closed yet, waiting {}", i + 1);
+                    }
+                    
+                    println!("RUST-ERROR: Failed to close GUI");
+                    println!("TASK: Killing GUI");
+                    
+                    self.process.kill().expect("Failed to kill");
+                }
+            }
+        }
+    }
+}
+
 pub trait GUIWrite {
     fn gui_write(self, gui: &mut impl AsMut<GUI>);
     fn gui_write_if(self, gui: &mut impl AsMut<Option<GUI>>);
 }
 
 impl<T: AsRef<str>, U: IntoIterator<Item = T>> GUIWrite for U {
+    #[inline(always)]
     fn gui_write(self, gui: &mut impl AsMut<GUI>) {
         gui.as_mut().write_iter(self);
     }
     
+    #[inline(always)]
     fn gui_write_if(self, gui: &mut impl AsMut<Option<GUI>>) {
         gui.as_mut().as_mut().map(|gui| gui.write_iter(self));
     }

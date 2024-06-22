@@ -9,6 +9,7 @@ mod history;
 mod playlist;
 mod lyrics;
 
+use fslock::LockFile;
 use gui::*;
 use player::*;
 use playlist::*;
@@ -89,6 +90,9 @@ struct App {
     toggle_stop_next: Option<usize>,
     rewind: Option<usize>,
     fast_forward: Option<usize>,
+    jump_to_begin: Option<usize>,
+    jump_to_end: Option<usize>,
+    prev_song: Option<usize>,
     
     lyrics_top_left: Option<usize>,
     lyrics_top_center: Option<usize>,
@@ -107,6 +111,20 @@ struct App {
 
 impl App {
     fn run() {
+        let mut cache_path = dirs::cache_dir().unwrap();
+                
+        cache_path.push("feois-music-player");
+        
+        if !cache_path.is_dir() {
+            create_dir_all(&cache_path).expect("Failed to create cache directory");
+        }
+        
+        let mut lock = LockFile::open(cache_path.as_path().join("instance.lock").as_os_str()).expect("Failed to create lock");
+        
+        if !lock.try_lock_with_pid().expect("Failed to lock file") {
+            return;
+        }
+        
         let mut app = App {
             gui: None,
             playlist: Playlist::new(100),
@@ -120,17 +138,7 @@ impl App {
             key_duration: Duration::from_millis(100),
             seek_duration: Duration::from_secs(5),
             lyrics_position: LyricsPosition { layout: LyricsLayout::TopCenter, margin: 48 },
-            cache_path: {
-                let mut path = dirs::cache_dir().unwrap();
-                
-                path.push("feois-music-player");
-                
-                if !path.is_dir() {
-                    create_dir_all(&path).expect("Failed to create cache directory");
-                }
-                
-                path
-            },
+            cache_path,
             
             toggle_gui: None,
             quit_app: None,
@@ -144,6 +152,9 @@ impl App {
             toggle_stop_next: None,
             rewind: None,
             fast_forward: None,
+            jump_to_begin: None,
+            jump_to_end: None,
+            prev_song: None,
             
             lyrics_top_left: None,
             lyrics_top_center: None,
@@ -193,6 +204,9 @@ impl App {
         app.toggle_shuffling    = regonce(&[Key::Alt, Key::ShiftLeft, Key::KeyR]);
         app.toggle_mute         = regonce(&[Key::Alt, Key::KeyM]);
         app.toggle_stop_next    = regonce(&[Key::Alt, Key::ShiftLeft, Key::KeyM]);
+        app.jump_to_begin       = regonce(&[Key::Alt, Key::ControlLeft, Key::LeftArrow]);
+        app.jump_to_end         = regonce(&[Key::Alt, Key::ControlLeft, Key::RightArrow]);
+        app.prev_song           = regonce(&[Key::Alt, Key::ControlLeft, Key::UpArrow]);
         
         app.lyrics_top_left         = regonce(&[Key::Alt, Key::KeyL, Key::Num1]);
         app.lyrics_top_center       = regonce(&[Key::Alt, Key::KeyL, Key::Num2]);
@@ -288,6 +302,8 @@ impl App {
         write(lyrics_cache_path, to_string_pretty(&app.lyrics_position).expect("Failed to serialize")).expect("Failed to save cache");
         
         println!("STATUS: Exiting");
+        
+        lock.unlock().expect("Failed to unlock");
     }
     
     fn gui_events(&mut self) -> bool {
@@ -366,6 +382,11 @@ impl App {
             
             if comb == self.pause_resume_song {
                 match self.player.get_state() {
+                    PlayerState::Idle => {
+                        if let Some(song) = self.playlist.get_history().get_current().cloned() {
+                            self.play(&song);
+                        }
+                    }
                     PlayerState::Play => {
                         ["PAUSE"].gui_write_if(self);
                         self.player.pause();
@@ -423,6 +444,20 @@ impl App {
             
             if comb == self.fast_forward {
                 self.fast_forward();
+            }
+            
+            if comb == self.jump_to_begin {
+                self.player.seek(Duration::ZERO);
+            }
+            
+            if comb == self.jump_to_end {
+                self.player.skip();
+            }
+            
+            if comb == self.prev_song {
+                if let Some(song) = self.playlist.look_back() {
+                    self.play(&song);
+                }
             }
             
             if comb == self.lyrics_top_left {
