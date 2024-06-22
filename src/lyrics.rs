@@ -11,7 +11,7 @@ pub type Lyrics = xosd::XosdLyrics;
 
 
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum LyricsLayout {
+pub enum LyricsPosition {
     TopLeft,
     TopCenter,
     TopRight,
@@ -24,21 +24,22 @@ pub enum LyricsLayout {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub struct LyricsPosition {
-    pub layout: LyricsLayout,
+pub struct LyricsLayout {
+    pub position: LyricsPosition,
     pub margin: i32,
+    pub visible: bool,
 }
 
 
 pub trait LyricsTrait {
     type Error;
     
-    fn new(pos: LyricsPosition) -> std::result::Result<Self, Self::Error> where Self: Sized;
+    fn new(layout: LyricsLayout) -> std::result::Result<Self, Self::Error> where Self: Sized;
     fn is_showing(&self) -> Result<bool, Self::Error> { Ok(false) }
     fn reset(&mut self) -> Result<(), Self::Error> { Ok(()) }
     fn start(&mut self, _lyrics: Vec<(u32, String)>) -> Result<(), Self::Error> { Ok(()) }
     fn update(&mut self, _time: Duration) -> Result<(), Self::Error> { Ok(()) }
-    fn set_pos(&mut self, _pos: LyricsPosition) -> Result<(), Self::Error> { Ok(()) }
+    fn set_layout(&mut self, _layout: LyricsLayout) -> Result<(), Self::Error> { Ok(()) }
 }
 
 
@@ -50,7 +51,7 @@ impl LyricsTrait for Dummy {
     type Error = DummyError;
     
     #[inline(always)]
-    fn new(_pos: LyricsPosition) -> Result<Self, Self::Error> {
+    fn new(_layout: LyricsLayout) -> Result<Self, Self::Error> {
         Ok(Self)
     }
 }
@@ -81,8 +82,8 @@ mod xosd {
         Ok(xosd)
     }
     
-    fn new_three(small_color: &str, big_color: &str, small: i32, big: i32, osize: i32, pos: LyricsPosition) -> Result<(Xosd, Xosd, Xosd)> {
-        let (v, h, ho, vo) = get_xosd_align_margin(pos);
+    fn new_three(small_color: &str, big_color: &str, small: i32, big: i32, osize: i32, layout: LyricsLayout) -> Result<(Xosd, Xosd, Xosd)> {
+        let (v, h, ho, vo) = get_xosd_align_margin(layout);
         
         let (o1, o2, o3) = match v {
             VerticalAlign::Top => (0, small, small + big),
@@ -98,28 +99,28 @@ mod xosd {
     }
     
     #[inline(always)]
-    fn show(xosd: &mut Xosd, string: String) -> Result<()> {
-        xosd.display(0, Command::String(string))?;
+    fn show(xosd: &mut Xosd, string: Option<String>) -> Result<()> {
+        xosd.display(0, Command::String(string.unwrap_or_default()))?;
         
         Ok(())
     }
     
     #[inline(always)]
-    fn get_xosd_align_margin(pos: LyricsPosition) -> (VerticalAlign, HorizontalAlign, i32, i32) {
-        use LyricsLayout::*;
+    fn get_xosd_align_margin(layout: LyricsLayout) -> (VerticalAlign, HorizontalAlign, i32, i32) {
+        use LyricsPosition::*;
         use HorizontalAlign::{Left, Right, Center as HCenter};
         use VerticalAlign::{Top, Bottom, Center as VCenter};
         
-        match pos.layout {
-            TopLeft => (Top, Left, pos.margin, pos.margin),
-            TopCenter => (Top, HCenter, 0, pos.margin),
-            TopRight => (Top, Right, pos.margin, pos.margin),
-            CenterLeft => (VCenter, Left, pos.margin, 0),
+        match layout.position {
+            TopLeft => (Top, Left, layout.margin, layout.margin),
+            TopCenter => (Top, HCenter, 0, layout.margin),
+            TopRight => (Top, Right, layout.margin, layout.margin),
+            CenterLeft => (VCenter, Left, layout.margin, 0),
             Center => (VCenter, HCenter, 0, 0),
-            CenterRight => (VCenter, Right, pos.margin, 0),
-            BottomLeft => (Bottom, Left, pos.margin, pos.margin),
-            BottomCenter => (Bottom, HCenter, 0, pos.margin),
-            BottomRight => (Bottom, Right, pos.margin, pos.margin),
+            CenterRight => (VCenter, Right, layout.margin, 0),
+            BottomLeft => (Bottom, Left, layout.margin, layout.margin),
+            BottomCenter => (Bottom, HCenter, 0, layout.margin),
+            BottomRight => (Bottom, Right, layout.margin, layout.margin),
         }
     }
     
@@ -127,24 +128,26 @@ mod xosd {
         lines: Vec<(u32, String)>,
         index: usize,
         showing: bool,
-        pos: LyricsPosition,
+        hidden: bool,
+        layout: LyricsLayout,
         prev: Xosd,
         curr: Xosd,
         next: Xosd,
     }
-
+    
     impl LyricsTrait for XosdLyrics {
         type Error = Error;
         
         #[inline(always)]
-        fn new(pos: LyricsPosition) -> Result<Self> {
-            let (prev, curr, next) = new_three("dark gray", "white", 24, 32, 2, pos)?;
+        fn new(layout: LyricsLayout) -> Result<Self> {
+            let (prev, curr, next) = new_three("dark gray", "white", 24, 32, 2, layout)?;
             
             Ok(Self {
                 lines: Vec::new(),
                 index: usize::MAX,
                 showing: false,
-                pos,
+                hidden: false,
+                layout,
                 prev,
                 curr,
                 next,
@@ -152,15 +155,19 @@ mod xosd {
         }
         
         #[inline(always)]
-        fn set_pos(&mut self, pos: LyricsPosition) -> std::result::Result<(), Self::Error> {
-            if self.pos != pos {
-                let (prev, curr, next) = new_three("dark gray", "white", 24, 32, 2, pos)?;
+        fn set_layout(&mut self, layout: LyricsLayout) -> std::result::Result<(), Self::Error> {
+            if self.layout.visible != layout.visible {
+                self.layout.visible = layout.visible;
+            }
+            
+            if self.layout != layout {
+                let (prev, curr, next) = new_three("dark gray", "white", 24, 32, 2, layout)?;
                 
                 self.prev = prev;
                 self.curr = curr;
                 self.next = next;
                 
-                self.pos = pos;
+                self.layout = layout;
                 self.index = usize::MAX;
             }
             
@@ -174,9 +181,9 @@ mod xosd {
         
         #[inline(always)]
         fn reset(&mut self) -> std::result::Result<(), Self::Error> {
-            show(&mut self.prev, String::new())?;
-            show(&mut self.curr, String::new())?;
-            show(&mut self.next, String::new())?;
+            show(&mut self.prev, None)?;
+            show(&mut self.curr, None)?;
+            show(&mut self.next, None)?;
             
             self.showing = false;
             
@@ -194,14 +201,24 @@ mod xosd {
         
         #[inline(always)]
         fn update(&mut self, time: Duration) -> Result<()> {
-            let i = self.lines.partition_point(|&(t, _)| time.as_millis() > t as u128);
-            
-            if i != self.index {
-                self.index = i;
+            if self.layout.visible {
+                let i = self.lines.partition_point(|&(t, _)| time.as_millis() > t as u128);
                 
-                show(&mut self.prev, if i > 1 { self.lines[i - 2].1[1..].to_string() } else { String::new() })?;
-                show(&mut self.curr, if i > 0 { self.lines[i - 1].1[1..].to_string() } else { String::new() })?;
-                show(&mut self.next, if i < self.lines.len() { self.lines[i].1[1..].to_string() } else { String::new() })?;
+                if self.hidden || i != self.index {
+                    self.index = i;
+                    self.hidden = false;
+                    
+                    show(&mut self.prev, (i > 1).then(|| self.lines[i - 2].1[1..].to_string()))?;
+                    show(&mut self.curr, (i > 0).then(|| self.lines[i - 1].1[1..].to_string()))?;
+                    show(&mut self.next, (i < self.lines.len()).then(|| self.lines[i].1[1..].to_string()))?;
+                }
+            }
+            else if !self.hidden {
+                show(&mut self.prev, None)?;
+                show(&mut self.curr, None)?;
+                show(&mut self.next, None)?;
+                
+                self.hidden = true;
             }
             
             Ok(())

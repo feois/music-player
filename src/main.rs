@@ -75,7 +75,7 @@ struct App {
     volume_step: f32,
     key_duration: Duration,
     seek_duration: Duration,
-    lyrics_position: LyricsPosition,
+    lyrics_layout: LyricsLayout,
     cache_path: PathBuf,
     
     toggle_gui: Option<usize>,
@@ -93,6 +93,7 @@ struct App {
     jump_to_begin: Option<usize>,
     jump_to_end: Option<usize>,
     prev_song: Option<usize>,
+    toggle_lyrics_visibility: Option<usize>,
     
     lyrics_top_left: Option<usize>,
     lyrics_top_center: Option<usize>,
@@ -137,7 +138,7 @@ impl App {
             volume_step: 0.05,
             key_duration: Duration::from_millis(100),
             seek_duration: Duration::from_secs(5),
-            lyrics_position: LyricsPosition { layout: LyricsLayout::TopCenter, margin: 48 },
+            lyrics_layout: LyricsLayout { position: LyricsPosition::TopCenter, margin: 48, visible: true },
             cache_path,
             
             toggle_gui: None,
@@ -155,6 +156,7 @@ impl App {
             jump_to_begin: None,
             jump_to_end: None,
             prev_song: None,
+            toggle_lyrics_visibility: None,
             
             lyrics_top_left: None,
             lyrics_top_center: None,
@@ -184,10 +186,10 @@ impl App {
         }
         
         if let Some(lp) = read_to_string(&lyrics_cache_path).ok().and_then(|s| from_str(&s).ok()) {
-            app.lyrics_position = lp;
+            app.lyrics_layout = lp;
         }
         
-        match Lyrics::new(app.lyrics_position) {
+        match Lyrics::new(app.lyrics_layout) {
             Ok(lyrics) => { app.lyrics.replace(lyrics); }
             Err(e) => println!("RUST-ERROR: Failed to initialize floating lyrics {}", e)
         }
@@ -196,17 +198,18 @@ impl App {
         
         let mut regonce = |keys: &[Key]| Some(app.listener.register_once_combination(keys));
         
-        app.toggle_gui          = regonce(&[Key::Alt, Key::KeyC]);
-        app.quit_app            = regonce(&[Key::Alt, Key::KeyE]);
-        app.pause_resume_song   = regonce(&[Key::Alt, Key::Space]);
-        app.stop_player         = regonce(&[Key::Alt, Key::ShiftLeft, Key::Space]);
-        app.toggle_repeat_mode  = regonce(&[Key::Alt, Key::KeyR]);
-        app.toggle_shuffling    = regonce(&[Key::Alt, Key::ShiftLeft, Key::KeyR]);
-        app.toggle_mute         = regonce(&[Key::Alt, Key::KeyM]);
-        app.toggle_stop_next    = regonce(&[Key::Alt, Key::ShiftLeft, Key::KeyM]);
-        app.jump_to_begin       = regonce(&[Key::Alt, Key::ControlLeft, Key::LeftArrow]);
-        app.jump_to_end         = regonce(&[Key::Alt, Key::ControlLeft, Key::RightArrow]);
-        app.prev_song           = regonce(&[Key::Alt, Key::ControlLeft, Key::UpArrow]);
+        app.toggle_gui                  = regonce(&[Key::Alt, Key::KeyC]);
+        app.quit_app                    = regonce(&[Key::Alt, Key::KeyE]);
+        app.pause_resume_song           = regonce(&[Key::Alt, Key::Space]);
+        app.stop_player                 = regonce(&[Key::Alt, Key::ShiftLeft, Key::Space]);
+        app.toggle_repeat_mode          = regonce(&[Key::Alt, Key::KeyR]);
+        app.toggle_shuffling            = regonce(&[Key::Alt, Key::ShiftLeft, Key::KeyR]);
+        app.toggle_mute                 = regonce(&[Key::Alt, Key::KeyM]);
+        app.toggle_stop_next            = regonce(&[Key::Alt, Key::ShiftLeft, Key::KeyM]);
+        app.jump_to_begin               = regonce(&[Key::Alt, Key::ControlLeft, Key::LeftArrow]);
+        app.jump_to_end                 = regonce(&[Key::Alt, Key::ControlLeft, Key::RightArrow]);
+        app.prev_song                   = regonce(&[Key::Alt, Key::ControlLeft, Key::UpArrow]);
+        app.toggle_lyrics_visibility    = regonce(&[Key::Alt, Key::KeyH]);
         
         app.lyrics_top_left         = regonce(&[Key::Alt, Key::KeyL, Key::Num1]);
         app.lyrics_top_center       = regonce(&[Key::Alt, Key::KeyL, Key::Num2]);
@@ -284,7 +287,7 @@ impl App {
             }
             
             if let Some(lyrics) = &mut app.lyrics {
-                if let Err(e) = lyrics.set_pos(app.lyrics_position) {
+                if let Err(e) = lyrics.set_layout(app.lyrics_layout) {
                     println!("Failed to reposition lyrics {}", e);
                 }
             }
@@ -299,7 +302,7 @@ impl App {
         
         write(playlist_cache_path, to_string_pretty(&app.playlist).expect("Failed to serialize")).expect("Failed to save cache");
         write(player_cache_path, to_string_pretty(&app.player).expect("Failed to serialize")).expect("Failed to save cache");
-        write(lyrics_cache_path, to_string_pretty(&app.lyrics_position).expect("Failed to serialize")).expect("Failed to save cache");
+        write(lyrics_cache_path, to_string_pretty(&app.lyrics_layout).expect("Failed to serialize")).expect("Failed to save cache");
         
         println!("STATUS: Exiting");
         
@@ -318,7 +321,7 @@ impl App {
             let (command_name, args) = command.split_once(' ').unwrap_or((&command, ""));
             
             match command_name {
-                "MARGIN" => self.lyrics_position.margin = args.parse().unwrap(),
+                "MARGIN" => self.lyrics_layout.margin = args.parse().unwrap(),
                 "READTAG" => self.read_tags(args),
                 "PLAY" => {
                     let song = &self.playlist.select(args.parse().unwrap()).to_string();
@@ -460,40 +463,44 @@ impl App {
                 }
             }
             
+            if comb == self.toggle_lyrics_visibility {
+                self.lyrics_layout.visible = !self.lyrics_layout.visible;
+            }
+            
             if comb == self.lyrics_top_left {
-                self.lyrics_position.layout = LyricsLayout::TopLeft;
+                self.lyrics_layout.position = LyricsPosition::TopLeft;
             }
             
             if comb == self.lyrics_top_center {
-                self.lyrics_position.layout = LyricsLayout::TopCenter;
+                self.lyrics_layout.position = LyricsPosition::TopCenter;
             }
             
             if comb == self.lyrics_top_right {
-                self.lyrics_position.layout = LyricsLayout::TopRight;
+                self.lyrics_layout.position = LyricsPosition::TopRight;
             }
             
             if comb == self.lyrics_center_left {
-                self.lyrics_position.layout = LyricsLayout::CenterLeft;
+                self.lyrics_layout.position = LyricsPosition::CenterLeft;
             }
             
             if comb == self.lyrics_center {
-                self.lyrics_position.layout = LyricsLayout::Center;
+                self.lyrics_layout.position = LyricsPosition::Center;
             }
             
             if comb == self.lyrics_center_right {
-                self.lyrics_position.layout = LyricsLayout::CenterRight;
+                self.lyrics_layout.position = LyricsPosition::CenterRight;
             }
             
             if comb == self.lyrics_bottom_left {
-                self.lyrics_position.layout = LyricsLayout::BottomLeft;
+                self.lyrics_layout.position = LyricsPosition::BottomLeft;
             }
             
             if comb == self.lyrics_bottom_center {
-                self.lyrics_position.layout = LyricsLayout::BottomCenter;
+                self.lyrics_layout.position = LyricsPosition::BottomCenter;
             }
             
             if comb == self.lyrics_bottom_right {
-                self.lyrics_position.layout = LyricsLayout::BottomRight;
+                self.lyrics_layout.position = LyricsPosition::BottomRight;
             }
         }
         
@@ -515,7 +522,7 @@ impl App {
         
         let mut args = vec![
             arg("--cache-path=", &self.cache_path),
-            arg("--lyrics-margin=", self.lyrics_position.margin.to_string()),
+            arg("--lyrics-margin=", self.lyrics_layout.margin.to_string()),
         ];
         
         match self.player.get_state() {
