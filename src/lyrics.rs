@@ -181,11 +181,13 @@ mod xosd {
         
         #[inline(always)]
         fn reset(&mut self) -> std::result::Result<(), Self::Error> {
-            show(&mut self.prev, None)?;
-            show(&mut self.curr, None)?;
-            show(&mut self.next, None)?;
-            
-            self.showing = false;
+            if self.showing {
+                show(&mut self.prev, None)?;
+                show(&mut self.curr, None)?;
+                show(&mut self.next, None)?;
+                
+                self.showing = false;
+            }
             
             Ok(())
         }

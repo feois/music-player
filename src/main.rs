@@ -244,6 +244,12 @@ impl App {
                     }
                 }
                 PlayerState::Finished => {
+                    if let Some(lyrics) = &mut app.lyrics {
+                        if let Err(e) = lyrics.reset() {
+                            println!("RUST-ERROR: Failed to reset lyrics {}", e)
+                        }
+                    }
+                    
                     app.player.idle();
                     
                     if app.stop_next {
