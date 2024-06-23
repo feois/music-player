@@ -31,6 +31,7 @@ The global controls only listen to keys on the left side (i.e. Shift left, Contr
 - Or you can also **press shift (GUI)** while you **double click (GUI)** or **press Enter (GUI)** to just **add into playlist** and not play it
   - The **plus** symbol beside the song works similarly
 - You can **press Space (GUI)** to **search the library**
+- You can **right click the library (GUI)** to change to group by artists or albums
 
 ![image](https://github.com/feois/music-player/assets/68548170/07bf0d17-0ddd-4a5b-8464-d57a66931171)
 
