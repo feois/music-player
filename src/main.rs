@@ -450,14 +450,18 @@ impl App {
             }
             
             if comb == self.jump_to_begin {
+                ["REPLAY"].gui_write_if(self);
                 self.player.seek(Duration::ZERO);
             }
             
             if comb == self.jump_to_end {
+                ["STOP"].gui_write_if(self);
                 self.player.skip();
             }
             
             if comb == self.prev_song {
+                ["STOP"].gui_write_if(self);
+                
                 if let Some(song) = self.playlist.look_back() {
                     self.play(&song);
                 }

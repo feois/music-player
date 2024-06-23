@@ -565,6 +565,9 @@ func command(string: String) -> void:
 		
 		"FAST_FORWARD":
 			song_position += float(args[1])
+		
+		"REPLAY":
+			song_position = 0
 
 
 func show_song(song: Song) -> void:
