@@ -179,6 +179,8 @@ mod xosd {
         fn set_layout(&mut self, layout: LyricsLayout) -> Result<()> {
             if self.layout.visible != layout.visible {
                 self.layout.visible = layout.visible;
+                
+                self.update_text()?;
             }
             
             if self.layout != layout {
