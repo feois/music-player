@@ -35,9 +35,8 @@ pub trait LyricsTrait {
     type Error;
     
     fn new(layout: LyricsLayout) -> std::result::Result<Self, Self::Error> where Self: Sized;
-    fn is_showing(&self) -> Result<bool, Self::Error> { Ok(false) }
-    fn reset(&mut self) -> Result<(), Self::Error> { Ok(()) }
-    fn start(&mut self, _lyrics: Vec<(u32, String)>) -> Result<(), Self::Error> { Ok(()) }
+    fn begin(&mut self, _lyrics: impl IntoIterator<Item = (Duration, String)>) -> Result<(), Self::Error> { Ok(()) }
+    fn end(&mut self) -> Result<(), Self::Error> { Ok(()) }
     fn update(&mut self, _time: Duration) -> Result<(), Self::Error> { Ok(()) }
     fn set_layout(&mut self, _layout: LyricsLayout) -> Result<(), Self::Error> { Ok(()) }
 }
@@ -87,7 +86,7 @@ mod xosd {
         
         let (o1, o2, o3) = match v {
             VerticalAlign::Top => (0, small, small + big),
-            VerticalAlign::Center => (big, 0, -big),
+            VerticalAlign::Center => ((small + big) / 2, 0, -(small + big) / 2),
             VerticalAlign::Bottom => (small + big, small, 0),
         };
         
@@ -100,7 +99,12 @@ mod xosd {
     
     #[inline(always)]
     fn show(xosd: &mut Xosd, string: Option<String>) -> Result<()> {
-        xosd.display(0, Command::String(string.unwrap_or_default()))?;
+        if let Some(string) = string {
+            xosd.display(0, Command::String(string))?;
+        }
+        else if xosd.onscreen()? {
+            xosd.hide()?;
+        }
         
         Ok(())
     }
@@ -125,14 +129,33 @@ mod xosd {
     }
     
     pub struct XosdLyrics {
-        lines: Vec<(u32, String)>,
-        index: usize,
-        showing: bool,
-        hidden: bool,
+        lines: Vec<(Duration, String)>,
+        index: Option<usize>,
         layout: LyricsLayout,
         prev: Xosd,
         curr: Xosd,
         next: Xosd,
+    }
+    
+    impl XosdLyrics {
+        #[inline(always)]
+        fn update_text(&mut self) -> Result<()> {
+            if self.layout.visible {
+                if let Some(index) = self.index {
+                    show(&mut self.prev, (index > 1).then(|| self.lines[index - 2].1[1..].to_string()))?;
+                    show(&mut self.curr, (index > 0).then(|| self.lines[index - 1].1[1..].to_string()))?;
+                    show(&mut self.next, (index < self.lines.len()).then(|| self.lines[index].1[1..].to_string()))?;
+                    
+                    return Ok(());
+                }
+            }
+            
+            show(&mut self.prev, None)?;
+            show(&mut self.curr, None)?;
+            show(&mut self.next, None)?;
+            
+            Ok(())
+        }
     }
     
     impl LyricsTrait for XosdLyrics {
@@ -144,9 +167,7 @@ mod xosd {
             
             Ok(Self {
                 lines: Vec::new(),
-                index: usize::MAX,
-                showing: false,
-                hidden: false,
+                index: None,
                 layout,
                 prev,
                 curr,
@@ -155,7 +176,7 @@ mod xosd {
         }
         
         #[inline(always)]
-        fn set_layout(&mut self, layout: LyricsLayout) -> std::result::Result<(), Self::Error> {
+        fn set_layout(&mut self, layout: LyricsLayout) -> Result<()> {
             if self.layout.visible != layout.visible {
                 self.layout.visible = layout.visible;
             }
@@ -168,59 +189,37 @@ mod xosd {
                 self.next = next;
                 
                 self.layout = layout;
-                self.index = usize::MAX;
+                self.update_text()?;
             }
             
             Ok(())
         }
         
         #[inline(always)]
-        fn is_showing(&self) -> std::result::Result<bool, Self::Error> {
-            Ok(self.showing)
-        }
-        
-        #[inline(always)]
-        fn reset(&mut self) -> std::result::Result<(), Self::Error> {
-            if self.showing {
-                show(&mut self.prev, None)?;
-                show(&mut self.curr, None)?;
-                show(&mut self.next, None)?;
-                
-                self.showing = false;
-            }
-            
-            Ok(())
-        }
-        
-        #[inline(always)]
-        fn start(&mut self, lyrics: Vec<(u32, String)>) -> std::result::Result<(), Self::Error> {
-            self.lines = lyrics;
+        fn begin(&mut self, lyrics: impl IntoIterator<Item = (Duration, String)>) -> Result<()> {
+            self.lines = lyrics.into_iter().collect();
             self.lines.sort_by_key(|&(t, _)| t);
-            self.index = usize::MAX;
+            self.index = Some(0);
+            self.update_text()?;
+            
+            Ok(())
+        }
+        
+        #[inline(always)]
+        fn end(&mut self) -> Result<()> {
+            self.index = None;
+            self.update_text()?;
             
             Ok(())
         }
         
         #[inline(always)]
         fn update(&mut self, time: Duration) -> Result<()> {
-            if self.layout.visible {
-                let i = self.lines.partition_point(|&(t, _)| time.as_millis() > t as u128);
-                
-                if self.hidden || i != self.index {
-                    self.index = i;
-                    self.hidden = false;
-                    
-                    show(&mut self.prev, (i > 1).then(|| self.lines[i - 2].1[1..].to_string()))?;
-                    show(&mut self.curr, (i > 0).then(|| self.lines[i - 1].1[1..].to_string()))?;
-                    show(&mut self.next, (i < self.lines.len()).then(|| self.lines[i].1[1..].to_string()))?;
-                }
-            }
-            else if !self.hidden {
-                show(&mut self.prev, None)?;
-                show(&mut self.curr, None)?;
-                show(&mut self.next, None)?;
-                
-                self.hidden = true;
+            let i = self.lines.partition_point(|&(t, _)| time > t);
+            
+            if self.index.is_some_and(|index| i != index) {
+                self.index.replace(i);
+                self.update_text()?;
             }
             
             Ok(())
