@@ -60,6 +60,7 @@ The global controls only listen to keys on the left side (i.e. Shift left, Contr
   - You can **click the folder symbol (GUI)** to **import a playlist**, note that you might need to reload library after importing
   - You can **click the disk symbol (GUI)** to **export a playlist**
   - You can **click the X symbol (GUI)** to **delete a playlist**, you cannot delete when only one playlist presents
+  - You can **click and drag the tab (GUI)** to **reorder playlists**
   - You can select a song and **press Delete (GUI)** to **remove a song from playlist**
   - You can select a song, then **click and drag (GUI)** to **change the song's position** in the playlist
   - You can select a song and **double click (GUI)** or **press Enter (GUI)** to **play it instantly**
@@ -99,7 +100,7 @@ Floating lyrics are enabled by default and activates automatically when you play
 
 You can **press Alt+H (Global)** to **show or hide the floating lyrics**.
 
-You can **press Alt+L+1 or Alt+L+2 or ... or Alt+L+9 (Global)** to **change the position of floating lyrics** (Note that you need to play the song after you change position to update the floating lyrics)
+You can **press Alt+L+1 or Alt+L+2 or ... or Alt+L+9 (Global)** to **change the position of floating lyrics**
 
 ![image](https://github.com/feois/music-player/assets/68548170/3c767063-27c4-403e-ae8e-d654696ae260)
 ![image](https://github.com/feois/music-player/assets/68548170/d6fa0b5e-5971-44cb-9920-45239e59fe40)
@@ -177,3 +178,7 @@ You can change it in `src/main.rs` and compile yourself
 ## License
 
 This project is licensed under the MIT License - see the LICENSE.md file for details
+
+## Support
+
+If you want to help this project's development, [buy me a coffee](https://ko-fi.com/feois)!
