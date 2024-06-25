@@ -252,7 +252,7 @@ impl App {
                         
                         println!("STATUS: Idle");
                         
-                        app.end_lyrics();
+                        app.clear_lyrics();
                     }
                 }
                 _ => {}
@@ -307,7 +307,7 @@ impl App {
                     self.request_duration = true;
                     self.show_lyrics(song);
                 }
-                "STOP" => { self.player.stop(); self.end_lyrics() }
+                "STOP" => { self.player.stop(); self.clear_lyrics() }
                 "REPLAY" => if let Some(song) = self.playlist.get_history().get_current().cloned() { self.play(&song) }
                 "PREV" => if let Some(song) = self.playlist.look_back() { self.play(&song); }
                 "SKIP" => self.player.skip(),
@@ -382,7 +382,7 @@ impl App {
             if comb == self.stop_player {
                 ["STOP"].gui_write_if(self);
                 self.player.stop();
-                self.end_lyrics();
+                self.clear_lyrics();
             }
             
             if comb == self.volume_increase {
@@ -596,9 +596,12 @@ impl App {
             match Tag::read_from_path(path) {
                 Ok(tag) => {
                     if let Some(l) = tag.synchronised_lyrics().find(|l| l.lang == "eng") {
-                        if let Err(e) = lyrics.begin(l.content.iter().map(|(t, s)| (Duration::from_millis((*t).into()), s.clone()))) {
+                        if let Err(e) = lyrics.set_lyrics(l.content.iter().map(|(t, s)| (Duration::from_millis((*t).into()), s.clone()))) {
                             println!("RUST-ERROR: Failed to display lyrics {}", e)
                         }
+                    }
+                    else {
+                        self.clear_lyrics();
                     }
                 }
                 Err(e) => println!("RUST-ERROR: Failed to read tag from {} ({})", path, e)
@@ -607,12 +610,10 @@ impl App {
     }
     
     #[inline(always)]
-    fn end_lyrics(&mut self) {
-        println!("ended");
-        
+    fn clear_lyrics(&mut self) {
         if let Some(lyrics) = &mut self.lyrics {
-            if let Err(e) = lyrics.end() {
-                println!("RUST-ERROR: Failed to reset lyrics {}", e)
+            if let Err(e) = lyrics.clear() {
+                println!("RUST-ERROR: Failed to clear lyrics {}", e)
             }
         }
     }

@@ -35,8 +35,8 @@ pub trait LyricsTrait {
     type Error;
     
     fn new(layout: LyricsLayout) -> std::result::Result<Self, Self::Error> where Self: Sized;
-    fn begin(&mut self, _lyrics: impl IntoIterator<Item = (Duration, String)>) -> Result<(), Self::Error> { Ok(()) }
-    fn end(&mut self) -> Result<(), Self::Error> { Ok(()) }
+    fn set_lyrics(&mut self, _lyrics: impl IntoIterator<Item = (Duration, String)>) -> Result<(), Self::Error> { Ok(()) }
+    fn clear(&mut self) -> Result<(), Self::Error> { Ok(()) }
     fn update(&mut self, _time: Duration) -> Result<(), Self::Error> { Ok(()) }
     fn set_layout(&mut self, _layout: LyricsLayout) -> Result<(), Self::Error> { Ok(()) }
 }
@@ -198,7 +198,7 @@ mod xosd {
         }
         
         #[inline(always)]
-        fn begin(&mut self, lyrics: impl IntoIterator<Item = (Duration, String)>) -> Result<()> {
+        fn set_lyrics(&mut self, lyrics: impl IntoIterator<Item = (Duration, String)>) -> Result<()> {
             self.lines = lyrics.into_iter().collect();
             self.lines.sort_by_key(|&(t, _)| t);
             self.index = Some(0);
@@ -208,7 +208,7 @@ mod xosd {
         }
         
         #[inline(always)]
-        fn end(&mut self) -> Result<()> {
+        fn clear(&mut self) -> Result<()> {
             self.index = None;
             self.update_text()?;
             
