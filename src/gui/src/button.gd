@@ -20,6 +20,7 @@ signal pressed
 func _process(_delta: float) -> void:
 	$MarginContainer/TextureRect.texture = texture
 	$MarginContainer/TextureRect.expand_mode = expand_mode
+	$Button.tooltip_text = tooltip_text
 
 
 func _on_button_pressed() -> void:

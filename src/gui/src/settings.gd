@@ -23,7 +23,8 @@ func initialize(r: Root) -> void:
 	
 	%LibraryPath.text = r.library_path
 	%ProgressBackground.selected = PROGRESS_BACKGROUNDS.find(r.song_progress.background)
-	%LyricsMargin.text = str(r.lyrics_margin)
+	%LyricsMargin.value = r.lyrics_margin
+	%ThemePath.text = r.theme.resource_path if r.theme != r.default_theme else ""
 
 
 func _on_close_pressed() -> void:
@@ -46,7 +47,15 @@ func _on_reset_library_path_pressed() -> void:
 func _on_save_pressed() -> void:
 	root.library_path = %LibraryPath.text
 	root.song_progress.background = PROGRESS_BACKGROUNDS[%ProgressBackground.selected]
-	root.lyrics_margin = int(%LyricsMargin.text)
+	root.lyrics_margin = %LyricsMargin.value
+	
+	if %ThemePath.text.is_empty():
+		root.theme = root.default_theme
+	else:
+		var t = load(%ThemePath.text)
+		
+		if t is Theme:
+			root.theme = t
 	
 	root.save_cache()
 	
@@ -55,8 +64,16 @@ func _on_save_pressed() -> void:
 
 func _on_restore_all_pressed() -> void:
 	_on_reset_library_path_pressed()
+	_on_reset_theme_pressed()
 
 
-func _on_lyrics_margin_text_submitted(new_text: String) -> void:
-	if !new_text.is_valid_int():
-		%LyricsMargin.text = "0"
+func _on_theme_path_selector_file_selected(path: String) -> void:
+	%ThemePath.text = path
+
+
+func _on_theme_path_open_pressed() -> void:
+	$ThemePathSelector.popup_centered()
+
+
+func _on_reset_theme_pressed() -> void:
+	%ThemePath.text = ""

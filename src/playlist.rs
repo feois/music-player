@@ -5,7 +5,7 @@ use serde_json::{to_value, Value};
 use crate::history::History;
 
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub enum RepeatMode {
     #[serde(rename = "none")]
     NoRepeat,
@@ -135,8 +135,8 @@ impl Playlist {
     }
     
     #[inline(always)]
-    pub fn get_repeat_mode(&self) -> &RepeatMode {
-        &self.repeat_mode
+    pub fn get_repeat_mode(&self) -> RepeatMode {
+        self.repeat_mode
     }
     
     #[inline(always)]

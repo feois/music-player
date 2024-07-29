@@ -1,0 +1,101 @@
+[gd_resource type="Theme" load_steps=18 format=3 uid="uid://bpck0n8dgcf73"]
+
+[ext_resource type="FontFile" uid="uid://c2bj8wx8rbb76" path="res://src/InterTight-VariableFont_wght.ttf" id="1_qllu4"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_y2p2e"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wdvfo"]
+bg_color = Color(0.2484, 0.2484, 0.2484, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_smd77"]
+bg_color = Color(0, 0, 0, 0)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rkfcm"]
+bg_color = Color(0.497474, 0.497474, 0.497474, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1r2kf"]
+bg_color = Color(0, 0, 0, 0)
+border_width_bottom = 1
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ntp3s"]
+bg_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cvgaj"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.498039, 0.498039, 0.498039, 0.498039)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_r0hw6"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ecv6u"]
+bg_color = Color(0.258708, 0.606157, 1, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_njlqp"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ohu8p"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xpudu"]
+bg_color = Color(0, 0.443647, 0.790201, 1)
+
+[sub_resource type="Gradient" id="Gradient_cp2t4"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(1, 0.498039, 1, 1, 1, 1, 0.498039, 1, 0.498039, 1, 1, 1)
+metadata/_snap_enabled = true
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_bunap"]
+gradient = SubResource("Gradient_cp2t4")
+fill_from = Vector2(0.5, 0)
+fill_to = Vector2(0.5, 1)
+metadata/_snap_enabled = true
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_nyu3b"]
+texture = SubResource("GradientTexture2D_bunap")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i7pdw"]
+bg_color = Color(0, 0, 0, 1)
+
+[resource]
+Album/base_type = &"Label"
+Album/font_sizes/font_size = 20
+Album/fonts/font = ExtResource("1_qllu4")
+Artist/base_type = &"Label"
+Artist/font_sizes/font_size = 24
+Artist/fonts/font = ExtResource("1_qllu4")
+Button/styles/disabled = SubResource("StyleBoxEmpty_y2p2e")
+Button/styles/hover = SubResource("StyleBoxFlat_wdvfo")
+Button/styles/normal = SubResource("StyleBoxFlat_smd77")
+Button/styles/pressed = SubResource("StyleBoxFlat_rkfcm")
+LineEdit/styles/normal = SubResource("StyleBoxFlat_1r2kf")
+Lyrics/base_type = &"Label"
+Lyrics/font_sizes/font_size = 16
+Panel/styles/panel = SubResource("StyleBoxFlat_ntp3s")
+ProgressBackground/base_type = &"Panel"
+ProgressBackground/styles/panel = SubResource("StyleBoxFlat_cvgaj")
+ProgressLabel/base_type = &"Label"
+ProgressLabel/font_sizes/font_size = 16
+SongProgress/base_type = &"ProgressBar"
+SongProgress/styles/background = SubResource("StyleBoxEmpty_r0hw6")
+SongProgress/styles/fill = SubResource("StyleBoxFlat_ecv6u")
+TabContainer/styles/panel = SubResource("StyleBoxEmpty_njlqp")
+Title/base_type = &"Label"
+Title/font_sizes/font_size = 32
+Title/fonts/font = ExtResource("1_qllu4")
+TitleArtist/base_type = &"Label"
+TitleArtist/fonts/font = ExtResource("1_qllu4")
+Tree/styles/panel = SubResource("StyleBoxEmpty_ohu8p")
+Tree/styles/selected = SubResource("StyleBoxFlat_xpudu")
+Tree/styles/selected_focus = SubResource("StyleBoxFlat_xpudu")
+Volume/base_type = &"ProgressBar"
+Volume/styles/background = SubResource("StyleBoxTexture_nyu3b")
+Volume/styles/fill = SubResource("StyleBoxFlat_i7pdw")

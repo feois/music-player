@@ -3,6 +3,7 @@ extends ProgressBar
 
 
 signal seek(pct: float)
+signal update_text(pct: float)
 
 
 const BACKGROUND_NEVER := "never"
@@ -15,8 +16,12 @@ var background := BACKGROUND_ALWAYS
 var hovering := false
 
 
-func update(pos: Vector2) -> void:
-	seek.emit(clampf(pos.x / get_rect().size.x, 0, 1))
+func get_percent(pos: Vector2) -> float:
+	return clampf(pos.x / get_rect().size.x, 0, 1)
+
+
+func set_text(text: String) -> void:
+	$PanelContainer/Label.text = text
 
 
 func _process(_delta: float) -> void:
@@ -29,12 +34,14 @@ func _process(_delta: float) -> void:
 		
 		BACKGROUND_ALWAYS:
 			$Panel.visible = true
+	
+	$PanelContainer.visible = hovering
 
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		if is_pressed:
-			update(event.position - get_global_rect().position)
+			seek.emit(get_percent(event.position - get_global_rect().position))
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -44,9 +51,13 @@ func _gui_input(event: InputEvent) -> void:
 				is_pressed = event.pressed
 				
 				if is_pressed:
-					update(event.position)
+					seek.emit(get_percent(event.position))
 				
 				accept_event()
+	
+	if event is InputEventMouseMotion:
+		$PanelContainer.position.x = event.position.x - $PanelContainer.size.x / 2
+		update_text.emit(get_percent(event.position))
 
 
 func _on_mouse_entered() -> void:

@@ -6,15 +6,6 @@ const SHUFFLE_MODULATE := Color(1, 1, 1)
 const NO_SHUFFLE_MODULATE := Color(0.5, 0.5, 0.5)
 
 
-enum TagMode {
-	NONE,
-	PATH,
-	TITLE,
-	ALBUM,
-	ARTIST,
-	LYRICS,
-}
-
 enum PlayState {
 	IDLE,
 	PLAY,
@@ -43,13 +34,14 @@ var playing_playlist: Playlist:
 		if playing_playlist != value:
 			print("DELETE_ALL")
 			
-			for item in value.root.get_children():
-				prints("APPEND", item.get_text(3))
-			
 			if playing_playlist:
 				playlists.set_tab_icon(playlists.get_children().find(playing_playlist), null)
 			
-			playlists.set_tab_icon(playlists.get_children().find(value), preload("res://src/play.svg"))
+			if value:
+				playlists.set_tab_icon(playlists.get_children().find(value), preload("res://src/play.svg"))
+				
+				for item in value.root.get_children():
+					prints("APPEND", item.get_text(3))
 			
 			playing_playlist = value
 var current_playlist: Playlist:
@@ -103,12 +95,14 @@ var song_position := 0.0:
 			song_progress.value = song_position
 			%SongProgress/TextureRect.position.x = song_progress.size.x * song_position / song_duration - %SongProgress/TextureRect.size.x / 2
 var lyrics_margin := 0
+var ready_to_exit := false
 var cache_path := "user://"
 var cache_file_path: String:
 	get: return cache_path.path_join("gui.json")
 var playlists_dir_path: String:
 	get: return cache_path.path_join("playlists")
 
+@onready var default_theme := theme
 @onready var default_library_path := OS.get_environment("USERPROFILE" if OS.has_feature("windows") else "HOME").path_join("Music")
 @onready var library_path := default_library_path
 @onready var library: Tree = %Library
@@ -123,6 +117,7 @@ const ARG_SONG_DURATION := "--song-duration="
 const ARG_SONG_POSITION := "--song-position="
 const ARG_LAST_SONG := "--last-song="
 const ARG_LYRICS_MARGIN := "--lyrics-margin="
+const ARG_FPS := "--fps="
 
 
 func _ready() -> void:
@@ -134,28 +129,32 @@ func _ready() -> void:
 	
 	for arg in OS.get_cmdline_args():
 		if arg.begins_with(ARG_CACHE_PATH):
-			cache_path = arg.lstrip(ARG_CACHE_PATH)
+			cache_path = arg.trim_prefix(ARG_CACHE_PATH)
 		
 		if arg.begins_with(ARG_SONG_PATH):
-			song_path = arg.lstrip(ARG_SONG_PATH)
+			song_path = arg.trim_prefix(ARG_SONG_PATH)
 			state = PlayState.PLAY
 		
 		if arg.begins_with(ARG_SONG_DURATION):
-			song_duration = float(arg.lstrip(ARG_SONG_DURATION))
+			song_duration = float(arg.trim_prefix(ARG_SONG_DURATION))
 		
 		if arg.begins_with(ARG_SONG_POSITION):
-			song_position = float(arg.lstrip(ARG_SONG_POSITION))
+			song_position = float(arg.trim_prefix(ARG_SONG_POSITION))
 		
 		if arg.begins_with(ARG_LAST_SONG):
-			song_path = arg.lstrip(ARG_LAST_SONG)
+			song_path = arg.trim_prefix(ARG_LAST_SONG)
 		
 		if arg.begins_with(ARG_LYRICS_MARGIN):
-			lyrics_margin = int(arg.lstrip(ARG_LYRICS_MARGIN))
+			lyrics_margin = int(arg.trim_prefix(ARG_LYRICS_MARGIN))
+		
+		if arg.begins_with(ARG_FPS):
+			Engine.max_fps = int(arg.trim_prefix(ARG_FPS))
 		
 		if arg == "--paused":
 			play_state = PlayState.PAUSE
 	
 	song_progress.modulate = Color(0, 0, 0, 0)
+	%ProgressLabel.modulate = song_progress.modulate
 	%SongDetailsBox.visible = false
 	playlists.get_tab_bar().drag_to_rearrange_enabled = true
 	
@@ -180,6 +179,8 @@ func _ready() -> void:
 			last_focus = control)
 	
 	Stdin.listen(self)
+	
+	prints("INFO", "ready")
 
 
 func _physics_process(delta: float) -> void:
@@ -219,6 +220,8 @@ func _physics_process(delta: float) -> void:
 		%Search.grab_focus()
 	
 	song_progress.modulate = Color(1, 1, 1, 1) if play_state != PlayState.IDLE and song_duration > 0 else Color(0, 0, 0, 0)
+	%ProgressLabel.modulate = song_progress.modulate
+	%ProgressLabel.text = "%s / %s" % [time_string(song_position), time_string(song_duration)]
 	
 	if play_state == PlayState.PLAY:
 		song_position += delta
@@ -232,7 +235,10 @@ func _physics_process(delta: float) -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
-		prints("EXIT")
+		get_tree().create_timer(5).timeout.connect(func () -> void: get_tree().quit())
+		save_cache()
+		ready_to_exit = true
+		print("EXIT")
 
 
 func read_cache() -> bool:
@@ -269,13 +275,16 @@ func read_cache() -> bool:
 				playlists.current_tab = json.focused_playlist
 				playing_playlist = playlists.get_child(json.playing_playlist)
 				
+				if json.has(&"theme"):
+					theme = load(json.theme)
+				
 				return true
 	
 	return false
 
 
 func save_cache() -> void:
-	FileAccess.open(cache_file_path, FileAccess.WRITE).store_string(JSON.stringify({
+	var json := {
 		songs = serialize_songs(),
 		path = library_path,
 		progress_background = song_progress.background,
@@ -284,7 +293,12 @@ func save_cache() -> void:
 		playing_playlist = playlists.get_children().find(playing_playlist),
 		playlists = serialize_playlists(),
 		playlists_names = playlists_names(),
-	}, "\t"))
+	}
+	
+	if theme != default_theme:
+		json[&"theme"] = theme.resource_path
+	
+	FileAccess.open(cache_file_path, FileAccess.WRITE).store_string(JSON.stringify(json, "\t"))
 
 
 func serialize_songs() -> Array[Dictionary]:
@@ -316,6 +330,8 @@ func playlists_names() -> Array[String]:
 
 func scan_directory(path: String) -> void:
 	var dir := DirAccess.open(path)
+	
+	prints("INFO", "scanning", path, "object", dir)
 	
 	if dir:
 		var files := dir.get_files()
@@ -354,6 +370,22 @@ func reparent_item(item: TreeItem, parent: TreeItem) -> void:
 
 func comparer(x: TreeItem, y: TreeItem) -> bool:
 	return x.get_text(0) < y.get_text(0)
+
+
+func time_string(t: float) -> String:
+	var secs := int(t)
+	@warning_ignore("integer_division")
+	var mins := secs / 60
+	
+	
+	
+	if mins >= 60:
+		@warning_ignore("integer_division")
+		var hours := mins / 60
+		
+		return "%d:%02d:%02d" % [hours, mins % 60, secs % 60]
+	else:
+		return "%d:%02d" % [mins, secs % 60]
 
 
 func clear_library() -> void:
@@ -449,71 +481,48 @@ func add_song(song: Song) -> void:
 		item.set_meta(&"song", song)
 		item.set_tooltip_text(0, song.path)
 		
+		if song.path == last_played.path:
+			last_played = song
+		
 		reparent_item(item, parent)
 
 
-func read_tags(args: String) -> void:
-	var mode := TagMode.NONE
+func read_tags(s: String) -> void:
 	var song := Song.new()
+	var json = JSON.parse_string(s)
 	
-	for section in args.split(Stdin.DELIMETER):
-		if mode == TagMode.NONE:
-			match section:
-				"TAGOF":
-					mode = TagMode.PATH
-				
-				"Title":
-					mode = TagMode.TITLE
-				
-				"Artist":
-					mode = TagMode.ARTIST
-				
-				"Album":
-					mode = TagMode.ALBUM
-				
-				"Lyrics":
-					mode = TagMode.LYRICS
-		else:
-			match mode:
-				TagMode.PATH:
-					song.path = section
-					songs[section] = song
-				
-				TagMode.TITLE:
-					song.title = section
-				
-				TagMode.ALBUM:
-					song.album = section
-				
-				TagMode.ARTIST:
-					song.artist = section
-				
-				TagMode.LYRICS:
-					song.lyrics = section
-			
-			mode = TagMode.NONE
-	
-	add_song(song)
+	if json:
+		song.path = json.path
+		song.title = json.title if json.title else "No Title"
+		song.album = json.album if json.album else "No Album"
+		song.artist = "No Artist" if json.artists.is_empty() else ", ".join(json.artists)
+		song.lyrics = json.lyrics if json.lyrics else "No Lyrics"
+		
+		songs[song.path] = song
+		
+		add_song(song)
 
 
 func command(string: String) -> void:
-	var args := string.split(Stdin.DELIMETER, false, 2)
+	var c := string.get_slice(' ', 0)
 	
-	match args[0]:
+	match c:
 		"EXIT":
-			save_cache()
+			if not ready_to_exit:
+				save_cache()
+			
 			get_tree().quit()
 		
 		"TAGOF":
-			read_tags(string)
+			read_tags(string.substr(c.length() + 1))
 		
 		"PLAY":
-			last_played = songs[args[1]]
+			last_played = songs[string.substr(c.length() + 1)]
 			song_position = 0
 			play_state = PlayState.PLAY
 		
 		"VOLUME":
-			var volume := float(args[1]) * 100
+			var volume := float(string.substr(c.length() + 1)) * 100
 			
 			%VolumeLabel.text = str(roundi(volume)) + "%"
 			%Volume.value = 100 - volume
@@ -525,10 +534,10 @@ func command(string: String) -> void:
 			mute = false
 		
 		"DURATION":
-			song_duration = float(args[1])
+			song_duration = float(string.substr(c.length() + 1))
 		
 		"REPEAT":
-			match args[1]:
+			match string.substr(c.length() + 1):
 				"none":
 					%ControlBar/Repeat.texture = preload("res://src/no_repeat.svg")
 					%ControlBar/Repeat.tooltip_text = "No repeat (Toggle to repeat all songs in playlist)"
@@ -561,10 +570,10 @@ func command(string: String) -> void:
 			play_state = PlayState.IDLE
 		
 		"REWIND":
-			song_position -= float(args[1])
+			song_position -= float(string.substr(c.length() + 1))
 		
 		"FAST_FORWARD":
-			song_position += float(args[1])
+			song_position += float(string.substr(c.length() + 1))
 		
 		"REPLAY":
 			song_position = 0
@@ -631,6 +640,9 @@ func _on_library_path_selector_dir_selected(dir: String) -> void:
 func _on_reload_library_pressed() -> void:
 	songs.clear()
 	clear_library()
+	
+	prints("INFO", "reloading", library_path)
+	
 	scan_directory(library_path)
 
 
@@ -752,7 +764,7 @@ func _on_new_playlist_pressed() -> void:
 func _on_delete_playlist_pressed() -> void:
 	if playlists.get_child_count() > 1:
 		if playing_playlist == current_playlist:
-			print("DELETE_ALL")
+			playing_playlist = null
 		
 		current_playlist.queue_free()
 
@@ -867,3 +879,7 @@ func _on_volume_icon_pressed() -> void:
 	else:
 		mute = true
 		print("MUTE")
+
+
+func _on_song_progress_update_text(pct: float) -> void:
+	song_progress.set_text(time_string(pct * song_duration))

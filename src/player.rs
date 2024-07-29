@@ -4,6 +4,8 @@ use id3::{frame::SynchronisedLyricsType, v1v2::read_from_path};
 use playback_rs::Song;
 use serde::{Deserialize, Serialize};
 
+use crate::{error, task};
+
 
 pub enum PlayerState {
     Idle,
@@ -70,10 +72,10 @@ impl Player {
         match Song::from_file(path, None) {
             Ok(song) => {
                 if let Some(e) = self.player.play_song_now(&song, None).err() {
-                    println!("Failed to play song {:?}", e)
+                    error!(e, "Failed to play song")
                 }
                 else {
-                    println!("TASK: Playing song {}", path);
+                    task!("Playing song {}", path);
                     
                     self.player.set_playing(true);
                     self.state = PlayerState::Play;
@@ -85,11 +87,11 @@ impl Player {
                                 self.lyrics.sort_by_key(|&(time, _)| time);
                             }
                         }
-                        Err(e) => println!("RUST-ERROR: Cannot read tag from {} ({})", path, e)
+                        Err(e) => error!(e, "Cannot read tag from {}", path)
                     }
                 }
             }
-            Err(e) => println!("Failed to load song {} {:?}", path, e),
+            Err(e) => error!(e, "Failed to load song {}", path),
         }
     }
     
@@ -97,7 +99,7 @@ impl Player {
     pub fn stop(&mut self) {
         if let PlayerState::Finished = self.state {}
         else {
-            println!("TASK: Stopping");
+            task!("Stopping current song");
             
             self.player.stop();
             
@@ -109,7 +111,7 @@ impl Player {
     pub fn skip(&mut self) {
         if let PlayerState::Idle = self.state {}
         else {
-            println!("TASK: Skipping current song");
+            task!("Skipping current song");
             
             self.player.stop();
             
@@ -120,7 +122,7 @@ impl Player {
     #[inline(always)]
     pub fn pause(&mut self) {
         if let PlayerState::Play = self.state {
-            println!("TASK: Pausing");
+            task!("Pausing");
             
             self.player.set_playing(false);
             
@@ -131,7 +133,7 @@ impl Player {
     #[inline(always)]
     pub fn resume(&mut self) {
         if let PlayerState::Pause = self.state {
-            println!("TAsK: Resuming");
+            task!("Resuming");
             
             self.player.set_playing(true);
             

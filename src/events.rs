@@ -3,7 +3,7 @@ use std::{borrow::Borrow, collections::HashSet, hash::Hash, sync::mpsc::{channel
 pub use rdev::Key;
 pub use std::time::SystemTime as Time;
 
-use crate::BooleanConditional;
+use crate::{error, BooleanConditional};
 
 
 #[derive(PartialEq, Eq)]
@@ -106,7 +106,7 @@ impl EventListener {
     pub fn listen() -> Self {
         let (s, r) = channel();
         
-        thread::spawn(|| rdev::listen(move |e| s.send(e).err().map(|e| println!("RUST-ERROR: Listener dropped {}", e)).unwrap_or(())).expect("Failed to listen"));
+        thread::spawn(|| rdev::listen(move |e| { let _ = s.send(e).inspect_err(|e| error!(e, "Listener dropped")); }).expect("Failed to listen"));
         
         Self {
             receiver: r,

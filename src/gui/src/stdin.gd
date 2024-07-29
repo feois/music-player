@@ -1,23 +1,24 @@
 extends Node
 
-const DELIMETER := "::::"
-const ENDLINE := ";;;;"
-
-func listen(node: Node) -> void:
+func listen(root: Root) -> void:
 	Thread.new().start(
 		func ():
 			var s := ""
 			
 			while true:
-				s += OS.read_string_from_stdin()
+				var line := OS.read_string_from_stdin().trim_suffix("\n")
 				
-				if s.ends_with(ENDLINE + "\n"):
-					s = s.rstrip(ENDLINE + "\n")
+				if line.is_empty():
+					if s == "EXIT":
+						if not root.ready_to_exit:
+							get_tree().create_timer(5).timeout.connect(func () -> void: get_tree().quit())
 					
-					node.call_thread_safe(&"command", s)
+					root.call_thread_safe(&"command", s)
 					
 					if s == "EXIT":
 						break
 					
 					s = ""
+				else:
+					s += line
 	)

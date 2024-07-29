@@ -1,6 +1,6 @@
-#![windows_subsystem = "windows"]
+#![cfg_attr(not(feature = "console"), windows_subsystem = "windows")]
 
-use std::{env::current_exe, ffi::{OsStr, OsString}, fs::{create_dir_all, read_to_string, write}, path::PathBuf, time::{Duration, Instant}};
+use std::{env::current_exe, ffi::OsString, fs::{create_dir_all, read_to_string, write}, path::PathBuf, time::{Duration, Instant}};
 
 mod gui;
 mod player;
@@ -8,17 +8,18 @@ mod events;
 mod history;
 mod playlist;
 mod lyrics;
+mod metadata;
 
-use fslock::LockFile;
 use gui::*;
 use player::*;
 use playlist::*;
 use events::*;
 use lyrics::*;
+use metadata::*;
 
-use id3::{Tag, TagLike};
 use serde_json::{from_str, to_string_pretty};
 use notify_rust::Notification;
+use fslock::LockFile;
 
 
 pub trait BooleanConditional {
@@ -45,20 +46,49 @@ impl BooleanConditional for bool {
 }
 
 
-#[inline(always)]
-fn arg(arg_name: &str, argument: impl AsRef<OsStr>) -> OsString {
-    let mut s = OsString::from(arg_name);
+macro_rules! arg {
+    ($s:literal $e:expr) => {
+        {
+            let mut s = OsString::from(concat!("--", $s, "="));
+            
+            s.push($e);
+            
+            s
+        }
+    };
+}
+
+
+#[macro_export]
+macro_rules! error {
+    ($s:literal $(, $var:expr)*) => {
+        eprintln!(concat!("RUST-ERROR: ", $s) $(, $var)*)
+    };
     
-    s.push(argument);
-    
-    s
+    ($e:expr, $s:literal $(,$var:expr)*) => {
+        eprintln!(concat!("RUST-ERROR: ", $s, " {}") $(,$var)*, $e)
+    };
+}
+
+#[macro_export]
+macro_rules! status {
+    ($s:literal $(, $e:expr)*) => {
+        println!(concat!("STATUS: ", $s) $(, $e)*)
+    };
+}
+
+#[macro_export]
+macro_rules! task {
+    ($s:literal $(, $e:expr)*) => {
+        println!(concat!("TASK: ", $s) $(, $e)*)
+    };
 }
 
 
 #[inline(always)]
 fn show_notification(content: impl AsRef<str>) {
     if let Err(e) = Notification::new().body(content.as_ref()).show() {
-        println!("RUST-ERROR: Failed to show notification {}", e);
+        error!(e, "Failed to show notification");
     }
 }
 
@@ -70,7 +100,7 @@ struct App {
     listener: EventListener,
     lyrics: Option<Lyrics>,
     
-    fps: f64,
+    fps: u16,
     delta: Duration,
     volume_step: f32,
     key_duration: Duration,
@@ -133,7 +163,7 @@ impl App {
             listener: EventListener::listen(),
             lyrics: None,
             
-            fps: 120.,
+            fps: 120,
             delta: Duration::ZERO,
             volume_step: 0.05,
             key_duration: Duration::from_millis(100),
@@ -191,10 +221,10 @@ impl App {
         
         match Lyrics::new(app.lyrics_layout) {
             Ok(lyrics) => { app.lyrics.replace(lyrics); }
-            Err(e) => println!("RUST-ERROR: Failed to initialize floating lyrics {}", e)
+            Err(e) => error!(e, "Failed to initialize floating lyrics")
         }
         
-        app.delta = Duration::from_secs_f64(1. / app.fps);
+        app.delta = Duration::from_secs_f64(1. / app.fps as f64);
         
         let mut regonce = |keys: &[Key]| Some(app.listener.register_once_combination(keys));
         
@@ -236,21 +266,17 @@ impl App {
             app.player.update_state();
             
             match app.player.get_state() {
-                PlayerState::Play => {
-                    if let Some(lyrics) = &mut app.lyrics {
-                        if let Err(e) = lyrics.update(app.player.get_position()) {
-                            println!("RUST-ERROR: Failed to update lyrics {}", e);
-                        }
-                    }
-                }
+                PlayerState::Play => app.update_lyrics(app.player.get_position()),
                 PlayerState::Finished => {
                     app.player.idle();
                     
-                    if app.stop_next || app.playlist.poll().map(str::to_string).map(|s| app.play(&s)).is_none()  {
+                    let song = app.playlist.poll();
+                    
+                    if app.stop_next || song.map(str::to_string).map(|s| app.play(s)).is_none()  {
                         app.stop_next = false;
-                        ["STOP"].gui_write_if(&mut app);
+                        app.gui(GUICommand::STOP);
                         
-                        println!("STATUS: Idle");
+                        status!("Idle");
                         
                         app.clear_lyrics();
                     }
@@ -264,13 +290,17 @@ impl App {
             }
             
             if let Some(lyrics) = &mut app.lyrics {
+                if let Err(e) = lyrics.refresh() {
+                    error!(e, "Failed to refresh lyrics");
+                }
+                
                 if let Err(e) = lyrics.set_layout(app.lyrics_layout) {
-                    println!("Failed to reposition lyrics {}", e);
+                    error!(e, "Failed to reposition lyrics");
                 }
             }
             
             
-            let t = Instant::now().duration_since(t);
+            let t = t.elapsed();
             
             if t < app.delta {
                 spin_sleep::sleep(app.delta - t);
@@ -281,7 +311,7 @@ impl App {
         write(player_cache_path, to_string_pretty(&app.player).expect("Failed to serialize")).expect("Failed to save cache");
         write(lyrics_cache_path, to_string_pretty(&app.lyrics_layout).expect("Failed to serialize")).expect("Failed to save cache");
         
-        println!("STATUS: Exiting");
+        status!("Exiting");
         
         lock.unlock().expect("Failed to unlock");
     }
@@ -290,7 +320,7 @@ impl App {
         let mut close = false;
         
         if self.request_duration && self.player.get_length() != Duration::ZERO {
-            ["DURATION", &self.player.get_length().as_secs().to_string()].gui_write_if(self);
+            self.gui(GUICommand::DURATION(self.player.get_length()));
             self.request_duration = false;
         }
         
@@ -308,14 +338,14 @@ impl App {
                     self.show_lyrics(song);
                 }
                 "STOP" => { self.player.stop(); self.clear_lyrics() }
-                "REPLAY" => if let Some(song) = self.playlist.get_history().get_current().cloned() { self.play(&song) }
-                "PREV" => if let Some(song) = self.playlist.look_back() { self.play(&song); }
+                "REPLAY" => if let Some(song) = self.playlist.get_history().get_current().cloned() { self.play(song) }
+                "PREV" => if let Some(song) = self.playlist.look_back() { self.play(song); }
                 "SKIP" => self.player.skip(),
                 "PAUSE" => self.player.pause(),
                 "RESUME" => self.player.resume(),
                 "MUTE" => { self.player.mute = true; self.player.update_volume() }
                 "UNMUTE" => { self.player.mute = false; self.player.update_volume() }
-                "VOLUME" => if let Err(e) = args.parse().map(|v| self.volume(v, false)) { println!("RUST-ERROR: Cannot parse volume {}", e) }
+                "VOLUME" => if let Err(e) = args.parse().map(|v| self.volume(v, false)) { error!(e, "Cannot parse volume") }
                 "VOLINC" => self.volume(self.player.volume + self.volume_step, true),
                 "VOLDEC" => self.volume(self.player.volume - self.volume_step, true),
                 "APPEND" => self.playlist.append(args.to_string()),
@@ -323,13 +353,13 @@ impl App {
                 "MOVE" => { let (from, to) = args.split_once(' ').unwrap(); self.playlist.arrange(from.parse().unwrap(), to.parse().unwrap()) }
                 "DELETE" => self.playlist.delete(args.parse().unwrap()),
                 "DELETE_ALL" => self.playlist.clear(),
-                "TOGGLE_REPEAT" => { self.playlist.toggle_repeat_mode(); self.write_repeat_mode() },
+                "TOGGLE_REPEAT" => { self.playlist.toggle_repeat_mode(); self.gui(GUICommand::REPEAT(self.playlist.get_repeat_mode())) },
                 "SHUFFLE" => self.playlist.shuffle = true,
                 "NO_SHUFFLE" => self.playlist.shuffle = false,
                 "INFO" => println!("GODOT-PRINT: {}", args),
                 "REWIND" => self.rewind(),
                 "FAST_FORWARD" => self.fast_forward(),
-                "SEEK" => if let Err(e) = args.parse().map(|d| self.player.seek(Duration::from_secs_f64(d))) { println!("RUST-ERROR: Cannot seek {} {}", args, e) }
+                "SEEK" => if let Err(e) = args.parse().map(|d| self.seek(Duration::from_secs_f64(d))) { error!(e, "Cannot seek {}", args) }
                 "EXIT" => close = true,
                 "EXIT_ALL" => return true,
                 _ => println!("GODOT: {}", command),
@@ -364,15 +394,15 @@ impl App {
                 match self.player.get_state() {
                     PlayerState::Idle => {
                         if let Some(song) = self.playlist.get_history().get_current().cloned() {
-                            self.play(&song);
+                            self.play(song);
                         }
                     }
                     PlayerState::Play => {
-                        ["PAUSE"].gui_write_if(self);
+                        self.gui(GUICommand::PAUSE);
                         self.player.pause();
                     }
                     PlayerState::Pause => {
-                        ["RESUME"].gui_write_if(self);
+                        self.gui(GUICommand::RESUME);
                         self.player.resume();
                     }
                     _ => {}
@@ -380,7 +410,7 @@ impl App {
             }
             
             if comb == self.stop_player {
-                ["STOP"].gui_write_if(self);
+                self.gui(GUICommand::STOP);
                 self.player.stop();
                 self.clear_lyrics();
             }
@@ -396,19 +426,19 @@ impl App {
             if comb == self.toggle_mute {
                 self.player.mute = !self.player.mute;
                 self.player.update_volume();
-                [if self.player.mute { "MUTE" } else { "UNMUTE" }].gui_write_if(self);
+                self.gui(if self.player.mute { GUICommand::MUTE } else { GUICommand::UNMUTE });
             }
             
             if comb == self.toggle_repeat_mode {
                 self.playlist.toggle_repeat_mode();
-                self.write_repeat_mode();
+                self.gui(GUICommand::REPEAT(self.playlist.get_repeat_mode()));
                 
                 show_notification(format!("Repeat mode: {}", self.playlist.get_repeat_mode().describe()));
             }
             
             if comb == self.toggle_shuffling {
                 self.playlist.shuffle = !self.playlist.shuffle;
-                [if self.playlist.shuffle { "SHUFFLE" } else { "NO_SHUFFLE" }].gui_write_if(self);
+                self.gui(if self.playlist.shuffle { GUICommand::SHUFFLE } else { GUICommand::NO_SHUFFLE });
                 
                 show_notification(if self.playlist.shuffle { "Shuffle: true" } else { "Shuffle: false" });
             }
@@ -428,20 +458,20 @@ impl App {
             }
             
             if comb == self.jump_to_begin {
-                ["REPLAY"].gui_write_if(self);
-                self.player.seek(Duration::ZERO);
+                self.gui(GUICommand::REPLAY);
+                self.seek(Duration::ZERO);
             }
             
             if comb == self.jump_to_end {
-                ["STOP"].gui_write_if(self);
+                self.gui(GUICommand::STOP);
                 self.player.skip();
             }
             
             if comb == self.prev_song {
-                ["STOP"].gui_write_if(self);
+                self.gui(GUICommand::STOP);
                 
                 if let Some(song) = self.playlist.look_back() {
-                    self.play(&song);
+                    self.play(song);
                 }
             }
             
@@ -490,8 +520,10 @@ impl App {
     }
     
     #[inline(always)]
-    fn gui(&mut self) -> &mut GUI {
-        self.gui.as_mut().unwrap()
+    fn gui(&mut self, command: GUICommand) {
+        if let Some(gui) = &mut self.gui {
+            gui.command(command)
+        }
     }
     
     fn launch_gui(&mut self) {
@@ -503,8 +535,9 @@ impl App {
         dir.push("godot");
         
         let mut args = vec![
-            arg("--cache-path=", &self.cache_path),
-            arg("--lyrics-margin=", self.lyrics_layout.margin.to_string()),
+            arg!("cache-path" &self.cache_path),
+            arg!("lyrics-margin" self.lyrics_layout.margin.to_string()),
+            arg!("fps" self.fps.to_string()),
         ];
         
         match self.player.get_state() {
@@ -513,24 +546,27 @@ impl App {
                     args.push(OsString::from("--paused"))
                 }
                 
-                args.push(arg("--song-path=", self.playlist.get_history().get_current().unwrap()));
-                args.push(arg("--song-duration=", self.player.get_length().as_secs_f64().to_string()));
-                args.push(arg("--song-position=", self.player.get_position().as_secs_f64().to_string()));
+                args.push(arg!("song-path" self.playlist.get_history().get_current().unwrap()));
+                args.push(arg!("song-duration" self.player.get_length().as_secs_f64().to_string()));
+                args.push(arg!("song-position" self.player.get_position().as_secs_f64().to_string()));
             }
             _ => {
                 if let Some(song) = self.playlist.get_history().get_current().cloned() {
-                    args.push(arg("--last-song=", song))
+                    args.push(arg!("last-song" song))
                 }
             }
         }
         
-        println!("TASK: Launching GUI");
+        task!("Launching GUI");
         
-        self.gui.replace(GUI::launch(dir.as_os_str(), args));
-        ["VOLUME", &self.player.volume.to_string()].gui_write(self);
-        self.write_repeat_mode();
-        [if self.playlist.shuffle { "SHUFFLE" } else { "NO_SHUFFLE" }].gui_write_if(self);
-        [if self.player.mute { "MUTE" } else { "UNMUTE" }].gui_write_if(self);
+        let mut gui = GUI::launch(dir.as_os_str(), args);
+        
+        gui.command(GUICommand::VOLUME(self.player.volume));
+        gui.command(if self.player.mute { GUICommand::MUTE } else { GUICommand::UNMUTE });
+        gui.command(if self.playlist.shuffle { GUICommand::SHUFFLE } else { GUICommand::NO_SHUFFLE });
+        gui.command(GUICommand::REPEAT(self.playlist.get_repeat_mode()));
+        
+        self.gui.replace(gui);
     }
     
     #[inline(always)]
@@ -538,20 +574,11 @@ impl App {
         self.gui.take().map(GUI::close);
     }
     
+    #[inline(always)]
     fn read_tags(&mut self, path: &str) {
-        match Tag::read_from_path(path) {
-            Ok(tag) => {
-                println!("TASK: Reading tag of {}", path);
-                
-                self.gui().write_iter(&[
-                    "TAGOF", path,
-                    "Title", tag.title().filter(|s| !s.is_empty()).unwrap_or("No Title"),
-                    "Album", tag.album().filter(|s| !s.is_empty()).unwrap_or("No Album"),
-                    "Artist", &tag.artists().map(|artists| artists.join(", ")).filter(|s| !s.is_empty()).unwrap_or("No Artist".to_string()),
-                    "Lyrics", tag.lyrics().find(|lyrics| lyrics.lang == "eng").map(|lyrics| lyrics.text.as_str()).filter(|s| !s.is_empty()).unwrap_or("No Lyrics"),
-                ]);
-            }
-            Err(e) => println!("RUST-ERROR: Cannot read tag from {} ({})", path, e)
+        match Song::new(path) {
+            Ok(song) => self.gui(GUICommand::TAGOF(song)),
+            Err(e) => error!(e, "Failed to read tags {}", path),
         }
     }
     
@@ -560,51 +587,55 @@ impl App {
         self.player.volume = target.clamp(0., 1.);
         self.player.update_volume();
         
-        if notify && self.gui.is_some() {
-            ["VOLUME", &self.player.volume.to_string()].gui_write_if(self);
+        if notify {
+            self.gui(GUICommand::VOLUME(self.player.volume));
         }
-    }
-    
-    #[inline(always)]
-    fn write_repeat_mode(&mut self) {
-        ["REPEAT", &self.playlist.get_repeat_mode().get_string()].gui_write_if(self);
     }
     
     #[inline(always)]
     fn rewind(&mut self) {
         self.player.rewind(self.seek_duration);
-        ["REWIND", &self.seek_duration.as_secs_f64().to_string()].gui_write_if(self);
+        self.update_lyrics(self.player.get_position());
+        self.gui(GUICommand::REWIND(self.seek_duration));
     }
     
     #[inline(always)]
     fn fast_forward(&mut self) {
         self.player.fast_forward(self.seek_duration);
-        ["FAST_FORWARD", &self.seek_duration.as_secs_f64().to_string()].gui_write_if(self);
+        self.update_lyrics(self.player.get_position());
+        self.gui(GUICommand::FAST_FORWARD(self.seek_duration));
     }
     
     #[inline(always)]
-    fn play(&mut self, song: &str) {
-        self.player.play(song);
-        ["PLAY", song].gui_write_if(self);
+    fn seek(&mut self, time: Duration) {
+        self.player.seek(time);
+        self.update_lyrics(time);
+    }
+    
+    #[inline(always)]
+    fn update_lyrics(&mut self, time: Duration) {       
+        if let Some(lyrics) = &mut self.lyrics {
+            if let Err(e) = lyrics.update(time) {
+                error!(e, "Failed to update lyrics")
+            }
+        }
+    }
+    
+    #[inline(always)]
+    fn play(&mut self, song: String) {
+        self.player.play(&song);
         self.request_duration = true;
-        self.show_lyrics(song);
+        self.show_lyrics(&song);
+        self.gui(GUICommand::PLAY(song));
     }
     
     #[inline(always)]
     fn show_lyrics(&mut self, path: &str) {
         if let Some(lyrics) = &mut self.lyrics {
-            match Tag::read_from_path(path) {
-                Ok(tag) => {
-                    if let Some(l) = tag.synchronised_lyrics().find(|l| l.lang == "eng") {
-                        if let Err(e) = lyrics.set_lyrics(l.content.iter().map(|(t, s)| (Duration::from_millis((*t).into()), s.clone()))) {
-                            println!("RUST-ERROR: Failed to display lyrics {}", e)
-                        }
-                    }
-                    else {
-                        self.clear_lyrics();
-                    }
-                }
-                Err(e) => println!("RUST-ERROR: Failed to read tag from {} ({})", path, e)
+            match Song::synced_lyrics(path) {
+                Ok(Some(l)) => if let Err(e) = lyrics.set_lyrics(l) { error!(e, "Failed to display lyrics") }
+                Ok(None) => {}
+                Err(e) => error!(e, "Failed to read tag from {}", path)
             }
         }
     }
@@ -613,23 +644,12 @@ impl App {
     fn clear_lyrics(&mut self) {
         if let Some(lyrics) = &mut self.lyrics {
             if let Err(e) = lyrics.clear() {
-                println!("RUST-ERROR: Failed to clear lyrics {}", e)
+                error!(e, "Failed to clear lyrics")
             }
         }
     }
 }
 
-impl AsMut<GUI> for App {
-    fn as_mut(&mut self) -> &mut GUI {
-        self.gui()
-    }
-}
-
-impl AsMut<Option<GUI>> for App {
-    fn as_mut(&mut self) -> &mut Option<GUI> {
-        &mut self.gui
-    }
-}
 
 fn main() {
     App::run();

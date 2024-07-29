@@ -21,6 +21,15 @@ file_mode = 2
 access = 2
 use_native_dialog = true
 
+[node name="ThemePathSelector" type="FileDialog" parent="."]
+title = "Open a File"
+size = Vector2i(312, 154)
+ok_button_text = "Open"
+file_mode = 0
+access = 2
+filters = PackedStringArray("*.tres *.theme *.res ; Godot Theme")
+use_native_dialog = true
+
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
@@ -57,10 +66,9 @@ size_flags_horizontal = 3
 [node name="Label" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer/HBoxContainer2"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Library Path"
+text = "Library path"
 
 [node name="ResetLibraryPath" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer/HBoxContainer2" instance=ExtResource("2_svhev")]
-unique_name_in_owner = true
 layout_mode = 2
 texture = ExtResource("3_xpnv4")
 margin = 4
@@ -94,6 +102,7 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
+alignment = 1
 item_count = 3
 popup/item_0/text = "Never"
 popup/item_0/id = 0
@@ -111,11 +120,45 @@ size_flags_horizontal = 3
 text = "Margin of floating lyrics"
 autowrap_mode = 3
 
-[node name="LyricsMargin" type="LineEdit" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer3"]
+[node name="LyricsMargin" type="SpinBox" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer3"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-virtual_keyboard_type = 2
+allow_greater = true
+alignment = 2
+suffix = "px"
+
+[node name="HBoxContainer4" type="HBoxContainer" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer4"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer4/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Theme style"
+
+[node name="ResetTheme" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer4/HBoxContainer2" instance=ExtResource("2_svhev")]
+layout_mode = 2
+texture = ExtResource("3_xpnv4")
+margin = 4
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer4"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ThemePath" type="LineEdit" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer4/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ThemePathOpen" parent="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer4/HBoxContainer" instance=ExtResource("2_svhev")]
+unique_name_in_owner = true
+layout_mode = 2
+texture = ExtResource("2_ughdl")
+margin = 4
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
@@ -135,9 +178,11 @@ layout_mode = 2
 text = "Discard & Close"
 
 [connection signal="dir_selected" from="LibraryPathSelector" to="." method="_on_library_path_selector_dir_selected"]
+[connection signal="file_selected" from="ThemePathSelector" to="." method="_on_theme_path_selector_file_selected"]
 [connection signal="pressed" from="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer/HBoxContainer2/ResetLibraryPath" to="." method="_on_reset_library_path_pressed"]
 [connection signal="pressed" from="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer/HBoxContainer/LibraryPathOpen" to="." method="_on_library_path_open_pressed"]
-[connection signal="text_submitted" from="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer3/LyricsMargin" to="." method="_on_lyrics_margin_text_submitted"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer4/HBoxContainer2/ResetTheme" to="." method="_on_reset_theme_pressed"]
+[connection signal="pressed" from="MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer/HBoxContainer4/HBoxContainer/ThemePathOpen" to="." method="_on_theme_path_open_pressed"]
 [connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/RestoreAll" to="." method="_on_restore_all_pressed"]
 [connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/Save" to="." method="_on_save_pressed"]
 [connection signal="pressed" from="MarginContainer/VBoxContainer/HBoxContainer/Close" to="." method="_on_close_pressed"]
